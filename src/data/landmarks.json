@@ -1,0 +1,122 @@
+[
+  {
+    "id": "kartlis_deda",
+    "name_en": "Kartlis Deda (Mother of Georgia)",
+    "name_ka": "ქართლის დედა",
+    "name_ru": "Мать Грузии (Картлис Дэда)",
+    "category": "monument",
+    "lat": 41.6881,
+    "lng": 44.8046,
+    "description_en": "Iconic hilltop statue overlooking Tbilisi, symbolizing hospitality to friends and defense against enemies.",
+    "description_ka": "იკონური ქანდაკება გორაზე, რომელიც გადმოჰყურებს თბილისს და განასახიერებს სტუმართმოყვარეობას მეგობრებისადმი და თავდაცვას მტრებისგან.",
+    "description_ru": "Знаковая статуя на холме, возвышающаяся над Тбилиси, символизирующая гостеприимство к друзьям и защиту от врагов."
+  },
+  {
+    "id": "narikala",
+    "name_en": "Narikala Fortress",
+    "name_ka": "ნარიყალას ციხე",
+    "name_ru": "Крепость Нарикала",
+    "category": "fortress",
+    "lat": 41.6892,
+    "lng": 44.8064,
+    "description_en": "Ancient hilltop fortress with panoramic views over the Old Town and the Mtkvari River.",
+    "description_ka": "უძველესი ციხე გორაზე პანორამული ხედებით ძველ ქალაქსა და მტკვარზე.",
+    "description_ru": "Древняя крепость на холме с панорамным видом на Старый город и реку Мтквари."
+  },
+  {
+    "id": "sameba",
+    "name_en": "Holy Trinity Cathedral (Sameba)",
+    "name_ka": "სამების საკათედრო ტაძარი",
+    "name_ru": "Собор Святой Троицы (Самеба)",
+    "category": "church",
+    "lat": 41.6975,
+    "lng": 44.8167,
+    "description_en": "The main cathedral of the Georgian Orthodox Church, one of the largest Orthodox cathedrals in the world.",
+    "description_ka": "საქართველოს მართლმადიდებელი ეკლესიის მთავარი საკათედრო ტაძარი, ერთ-ერთი უდიდესი მართლმადიდებლური ტაძარი მსოფლიოში.",
+    "description_ru": "Главный собор Грузинской православной церкви, один из крупнейших православных соборов в мире."
+  },
+  {
+    "id": "peace_bridge",
+    "name_en": "Bridge of Peace",
+    "name_ka": "მშვიდობის ხიდი",
+    "name_ru": "Мост Мира",
+    "category": "landmark",
+    "lat": 41.6929,
+    "lng": 44.8069,
+    "description_en": "Modern glass-and-steel pedestrian bridge over the Mtkvari River, lit up at night.",
+    "description_ka": "თანამედროვე მინისა და ლითონის ფეხით მოსიარულეთა ხიდი მტკვარზე, ღამით განათებული.",
+    "description_ru": "Современный стеклянно-стальной пешеходный мост через реку Мтквари, освещённый ночью."
+  },
+  {
+    "id": "freedom_square",
+    "name_en": "Freedom Square",
+    "name_ka": "თავისუფლების მოედანი",
+    "name_ru": "Площадь Свободы",
+    "category": "square",
+    "lat": 41.6939,
+    "lng": 44.8017,
+    "description_en": "Central city square topped by the golden St. George Freedom Monument.",
+    "description_ka": "ქალაქის ცენტრალური მოედანი, რომელსაც გვირგვინად ადგას წმინდა გიორგის ოქროსფერი თავისუფლების ძეგლი.",
+    "description_ru": "Центральная городская площадь, увенчанная золотым памятником Святому Георгию — Монументом Свободы."
+  },
+  {
+    "id": "rustaveli_theatre",
+    "name_en": "Rustaveli State Academic Theatre",
+    "name_ka": "რუსთაველის თეატრი",
+    "name_ru": "Театр Руставели",
+    "category": "theatre",
+    "lat": 41.6989,
+    "lng": 44.7969,
+    "description_en": "Historic theatre building on Rustaveli Avenue with an ornate Art Nouveau facade.",
+    "description_ka": "ისტორიული თეატრის შენობა რუსთაველის გამზირზე, დახვეწილი არტ-ნუვო ფასადით.",
+    "description_ru": "Историческое здание театра на проспекте Руставели с изысканным фасадом в стиле ар-нуво."
+  },
+  {
+    "id": "dry_bridge_market",
+    "name_en": "Dry Bridge Market",
+    "name_ka": "მშრალი ხიდის ბაზარი",
+    "name_ru": "Рынок Сухой мост",
+    "category": "market",
+    "lat": 41.6975,
+    "lng": 44.7995,
+    "description_en": "Open-air flea market for antiques, art, and Soviet-era memorabilia.",
+    "description_ka": "ღია ცის ქვეშ ბაზარი ანტიკვარიატის, ხელოვნებისა და საბჭოთა ეპოქის სუვენირებისთვის.",
+    "description_ru": "Рынок под открытым небом с антиквариатом, искусством и сувенирами советской эпохи."
+  },
+  {
+    "id": "turtle_lake",
+    "name_en": "Turtle Lake (Kus Tba)",
+    "name_ka": "კუს ტბა",
+    "name_ru": "Черепашье озеро (Кус Тба)",
+    "category": "viewpoint",
+    "lat": 41.7025,
+    "lng": 44.7369,
+    "description_en": "Small lake in the hills above Vake, reachable by cable car, popular for walks and cafes.",
+    "description_ka": "პატარა ტბა ვაკის ზემოთ მდებარე ბორცვებში, მისადგომია საბაგირო გზით, პოპულარულია სეირნობისა და კაფეებისთვის.",
+    "description_ru": "Небольшое озеро в холмах над Ваке, доступно по канатной дороге, популярно для прогулок и кафе."
+  },
+  {
+    "id": "mtatsminda_park",
+    "name_en": "Mtatsminda Park",
+    "name_ka": "მთაწმინდის პარკი",
+    "name_ru": "Парк Мтацминда",
+    "category": "park",
+    "lat": 41.7010,
+    "lng": 44.7745,
+    "description_en": "Hilltop amusement park with sweeping city views, reached by the historic funicular.",
+    "description_ka": "გასართობი პარკი მთის წვერზე ქალაქის შესანიშნავი ხედებით, მისადგომია ისტორიული ფუნიკულიორით.",
+    "description_ru": "Парк развлечений на вершине горы с захватывающим видом на город, доступен по историческому фуникулёру."
+  },
+  {
+    "id": "abanotubani",
+    "name_en": "Abanotubani (Sulfur Baths)",
+    "name_ka": "აბანოთუბანი",
+    "name_ru": "Абанотубани (Серные бани)",
+    "category": "landmark",
+    "lat": 41.6886,
+    "lng": 44.8098,
+    "description_en": "Historic sulfur bathhouse district in Old Tbilisi, known for its brick domes.",
+    "description_ka": "ისტორიული გოგირდის აბანოების უბანი ძველ თბილისში, ცნობილი აგურის გუმბათებით.",
+    "description_ru": "Исторический квартал серных бань в Старом Тбилиси, известный своими кирпичными куполами."
+  }
+]

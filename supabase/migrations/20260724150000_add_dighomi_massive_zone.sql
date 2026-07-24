@@ -1,0 +1,10 @@
+-- Georgia Safe — add missing Dighomi Massive zone.
+-- The original 15 zones didn't cover Dighomi Massive (დიღმის მასივი), a
+-- large residential district in northwest Tbilisi; users there were being
+-- misattributed to the nearest existing zone (Didube) by Guardian's
+-- nearest-zone lookup. Idempotent: re-running upserts by id. Mirrors the
+-- same entry added to src/data/zones.json.
+
+insert into public.zones (id, name_en, name_ka, name_ru, day_score, night_score, day_level, night_level, lat, lng, tips_en, tips_ka, tips_ru) values
+  ('dighomi_massive', 'Dighomi Massive', 'დიღმის მასივი', 'Дигомский массив', 78, 55, 'green', 'yellow', 41.7565, 44.768, ARRAY['A calm Soviet-era residential district — daytime is generally safe and uneventful.', 'At night stay on Marshal Gelovani Avenue and other main lit streets; courtyards between apartment blocks can be poorly lit.', 'The riverside park is lively with families by day but empties out after dark — avoid it late at night.']::text[], ARRAY['მშვიდი საბჭოთა პერიოდის საცხოვრებელი უბანი — დღისით ზოგადად უსაფრთხო და წყნარია.', 'ღამით დარჩი მარშალ გელოვანის გამზირზე და სხვა მთავარ განათებულ ქუჩებზე; კორპუსებს შორის ეზოები შეიძლება ცუდად იყოს განათებული.', 'სანაპირო პარკი დღისით ოჯახებით სავსეა, მაგრამ დაბნელების შემდეგ ცარიელდება — გვიან ღამით მოერიდე.']::text[], ARRAY['Спокойный жилой район советской застройки — днём здесь, как правило, безопасно и тихо.', 'Ночью держитесь проспекта Маршала Геловани и других главных освещённых улиц; дворы между корпусами могут быть плохо освещены.', 'Прибрежный парк днём полон семей, но после наступления темноты пустеет — избегайте его поздней ночью.']::text[])
+on conflict (id) do update set name_en=excluded.name_en, name_ka=excluded.name_ka, name_ru=excluded.name_ru, day_score=excluded.day_score, night_score=excluded.night_score, day_level=excluded.day_level, night_level=excluded.night_level, lat=excluded.lat, lng=excluded.lng, tips_en=excluded.tips_en, tips_ka=excluded.tips_ka, tips_ru=excluded.tips_ru;

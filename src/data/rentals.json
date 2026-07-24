@@ -1,0 +1,26 @@
+{
+  "car_rentals": [
+    {
+      "id": "placeholder_car_1",
+      "name_en": "Placeholder Car Rental Partner",
+      "name_ka": "სატესტო მანქანების გაქირავების პარტნიორი",
+      "name_ru": "Тестовый партнёр по прокату авто",
+      "phone": "+995 000 00 00 00",
+      "note_en": "Placeholder entry for testing — will be replaced with a real rental partner.",
+      "note_ka": "სატესტო ჩანაწერია — მალე შეიცვლება რეალური პარტნიორის მონაცემებით.",
+      "note_ru": "Тестовая запись — скоро будет заменена данными реального партнёра."
+    }
+  ],
+  "scooter_rentals": [
+    {
+      "id": "placeholder_scooter_1",
+      "name_en": "Placeholder Scooter Rental Partner",
+      "name_ka": "სატესტო სკუტერების გაქირავების პარტნიორი",
+      "name_ru": "Тестовый партнёр по прокату самокатов",
+      "phone": "+995 000 00 00 00",
+      "note_en": "Placeholder entry for testing — will be replaced with a real rental partner.",
+      "note_ka": "სატესტო ჩანაწერია — მალე შეიცვლება რეალური პარტნიორის მონაცემებით.",
+      "note_ru": "Тестовая запись — скоро будет заменена данными реального партнёра."
+    }
+  ]
+}

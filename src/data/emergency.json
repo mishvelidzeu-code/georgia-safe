@@ -1,0 +1,148 @@
+{
+  "note_en": "Contact details compiled from public sources, July 2026. Verify critical numbers before relying on them in a real emergency — always call 112 first.",
+  "note_ka": "საკონტაქტო დეტალები შედგენილია საჯარო წყაროებიდან, 2026 წლის ივლისი. გადამოწმე კრიტიკული ნომრები რეალურ საგანგებო სიტუაციაში მათზე დაყრდნობამდე — ყოველთვის ჯერ დარეკე 112-ზე.",
+  "note_ru": "Контактные данные собраны из открытых источников, июль 2026 года. Проверяйте важные номера перед тем, как полагаться на них в реальной чрезвычайной ситуации — всегда сначала звоните 112.",
+  "national_number": "112",
+  "national_number_description_en": "Single emergency number in Georgia for police, fire, and ambulance. Free from any phone, available 24/7, English-speaking operators available.",
+  "national_number_description_ka": "საქართველოში ერთიანი საგანგებო ნომერი პოლიციის, სახანძრო და სასწრაფო დახმარებისთვის. უფასოა ნებისმიერი ტელეფონიდან, ხელმისაწვდომია 24/7, არის ინგლისურენოვანი ოპერატორები.",
+  "national_number_description_ru": "Единый номер экстренных служб в Грузии для полиции, пожарной службы и скорой помощи. Бесплатный с любого телефона, доступен круглосуточно, есть англоговорящие операторы.",
+  "health_hotline": {
+    "number": "1505",
+    "description_en": "Georgia Ministry of Health 24/7 hotline for medical guidance and information.",
+    "description_ka": "საქართველოს ჯანდაცვის სამინისტროს 24/7 ცხელი ხაზი სამედიცინო რჩევებისა და ინფორმაციისთვის.",
+    "description_ru": "Круглосуточная горячая линия Министерства здравоохранения Грузии для медицинских консультаций и информации."
+  },
+  "police": [
+    {
+      "id": "patrol_police",
+      "name_en": "Patrol Police Hotline",
+      "phone": "+995 32 241 42 42",
+      "description_en": "General patrol police assistance line for non-emergency police matters.",
+      "description_ka": "პატრულირების პოლიციის ზოგადი დახმარების ხაზი არასაგანგებო პოლიციის საკითხებისთვის.",
+      "description_ru": "Общая линия помощи патрульной полиции по неэкстренным полицейским вопросам."
+    },
+    {
+      "id": "mia_hq",
+      "name_en": "Ministry of Internal Affairs (HQ)",
+      "address": "4 Gmiri Kursantebi St, Tbilisi",
+      "phone": "+995 32 241 26 64",
+      "description_en": "Main Ministry of Internal Affairs contact office.",
+      "description_ka": "შინაგან საქმეთა სამინისტროს მთავარი საკონტაქტო ოფისი.",
+      "description_ru": "Главный контактный офис Министерства внутренних дел."
+    },
+    {
+      "id": "old_tbilisi_district_police",
+      "name_en": "Old Tbilisi District Police Main Department",
+      "address": "27 Tabukashvili St, Tbilisi",
+      "phone": "",
+      "description_en": "Local police department covering the Old Town tourist area.",
+      "description_ka": "ადგილობრივი პოლიციის დეპარტამენტი, რომელიც მოიცავს ძველი ქალაქის ტურისტულ ზონას.",
+      "description_ru": "Местный полицейский департамент, обслуживающий туристическую зону Старого города."
+    }
+  ],
+  "tourist_info_center": {
+    "name_en": "Tbilisi Tourist Information Center",
+    "address": "3 Rustaveli Ave, Tbilisi",
+    "hours": "10:00-18:00 daily",
+    "description_en": "Free maps, directions, and non-emergency tourist assistance. Not a police station — for emergencies always call 112.",
+    "description_ka": "უფასო რუკები, მიმართულებები და არასაგანგებო ტურისტული დახმარება. არ არის პოლიციის განყოფილება — საგანგებო სიტუაციებისთვის ყოველთვის დარეკე 112-ზე.",
+    "description_ru": "Бесплатные карты, указания и неэкстренная помощь туристам. Это не полицейский участок — в экстренных случаях всегда звоните 112."
+  },
+  "hospitals": [
+    {
+      "id": "amc_vake",
+      "name_en": "American Medical Centers (AMC) Vake",
+      "address": "11 Dimitri Arakishvili St, Vake, Tbilisi 0179",
+      "phone": "+995 32 250 00 20",
+      "lat": 41.715,
+      "lng": 44.756,
+      "notes_en": "24/7 emergency care, English-speaking staff, direct billing with many international insurers.",
+      "notes_ka": "24/7 გადაუდებელი დახმარება, ინგლისურენოვანი პერსონალი, პირდაპირი ანგარიშსწორება ბევრ საერთაშორისო სადაზღვევო კომპანიასთან.",
+      "notes_ru": "Круглосуточная неотложная помощь, англоговорящий персонал, прямые расчёты со многими международными страховщиками."
+    },
+    {
+      "id": "republican_hospital",
+      "name_en": "Academic N. Kipshidze University Clinic - Republican Hospital",
+      "address": "29 Vazha-Pshavela Ave, Tbilisi",
+      "phone": "+995 32 224 40 33",
+      "lat": 41.726,
+      "lng": 44.750,
+      "notes_en": "Major multi-profile hospital with emergency department.",
+      "notes_ka": "დიდი მრავალპროფილური საავადმყოფო გადაუდებელი დახმარების განყოფილებით.",
+      "notes_ru": "Крупная многопрофильная больница с отделением неотложной помощи."
+    },
+    {
+      "id": "eristavi_center",
+      "name_en": "K. Eristavi National Experimental and Clinical Surgery Center",
+      "address": "5 Chachava St, Tbilisi",
+      "phone": "+995 32 202 25 25",
+      "lat": 41.719,
+      "lng": 44.752,
+      "notes_en": "Emergency and surgical care center.",
+      "notes_ka": "გადაუდებელი და ქირურგიული დახმარების ცენტრი.",
+      "notes_ru": "Центр неотложной и хирургической помощи."
+    }
+  ],
+  "embassies": [
+    {
+      "id": "usa",
+      "country_en": "United States",
+      "address": "29 Georgian-American Friendship Ave, Didi Dighomi, Tbilisi 0131",
+      "phone": "+995 32 227 7000"
+    },
+    {
+      "id": "uk",
+      "country_en": "United Kingdom",
+      "address": "GMT Plaza, 4 Freedom Square, Tbilisi 0105",
+      "phone": "+995 32 274 747"
+    },
+    {
+      "id": "germany",
+      "country_en": "Germany",
+      "address": "Sheraton Metechi Palace Hotel, 20 Telavi St, Tbilisi 0103",
+      "phone": "+995 32 244 7300"
+    },
+    {
+      "id": "france",
+      "country_en": "France",
+      "address": "15 Gogebashvili St, Tbilisi",
+      "phone": "+995 32 999 976"
+    },
+    {
+      "id": "israel",
+      "country_en": "Israel",
+      "address": "154 Agmashenebeli Ave, Tbilisi 0102",
+      "phone": "+995 32 255 6500"
+    },
+    {
+      "id": "turkey",
+      "country_en": "Turkey",
+      "address": "35 Chavchavadze Ave, Tbilisi",
+      "phone": "+995 32 252 072"
+    },
+    {
+      "id": "poland",
+      "country_en": "Poland",
+      "address": "19 Zubalashvili St, Tbilisi",
+      "phone": "+995 32 292 0398"
+    },
+    {
+      "id": "ukraine",
+      "country_en": "Ukraine",
+      "address": "75 Oniashvili St, Tbilisi 0160",
+      "phone": "+995 32 231 1161"
+    },
+    {
+      "id": "azerbaijan",
+      "country_en": "Azerbaijan",
+      "address": "4 Vakhtang Gorgasali St, Tbilisi",
+      "phone": "+995 32 224 2220"
+    },
+    {
+      "id": "armenia",
+      "country_en": "Armenia",
+      "address": "4 Tetelashvili St, Tbilisi 0102",
+      "phone": "+995 32 295 1723"
+    }
+  ]
+}

@@ -1,0 +1,398 @@
+[
+  {
+    "id": "dighomi_massive",
+    "name_en": "Dighomi Massive",
+    "name_ka": "დიღმის მასივი",
+    "name_ru": "Дигомский массив",
+    "day_score": 78,
+    "night_score": 55,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.7565,
+    "lng": 44.768,
+    "tips_en": [
+      "A calm Soviet-era residential district — daytime is generally safe and uneventful.",
+      "At night stay on Marshal Gelovani Avenue and other main lit streets; courtyards between apartment blocks can be poorly lit.",
+      "The riverside park is lively with families by day but empties out after dark — avoid it late at night."
+    ],
+    "tips_ka": [
+      "მშვიდი საბჭოთა პერიოდის საცხოვრებელი უბანი — დღისით ზოგადად უსაფრთხო და წყნარია.",
+      "ღამით დარჩი მარშალ გელოვანის გამზირზე და სხვა მთავარ განათებულ ქუჩებზე; კორპუსებს შორის ეზოები შეიძლება ცუდად იყოს განათებული.",
+      "სანაპირო პარკი დღისით ოჯახებით სავსეა, მაგრამ დაბნელების შემდეგ ცარიელდება — გვიან ღამით მოერიდე."
+    ],
+    "tips_ru": [
+      "Спокойный жилой район советской застройки — днём здесь, как правило, безопасно и тихо.",
+      "Ночью держитесь проспекта Маршала Геловани и других главных освещённых улиц; дворы между корпусами могут быть плохо освещены.",
+      "Прибрежный парк днём полон семей, но после наступления темноты пустеет — избегайте его поздней ночью."
+    ]
+  },
+  {
+    "id": "old_tbilisi",
+    "name_en": "Old Tbilisi",
+    "name_ka": "ძველი თბილისი",
+    "name_ru": "Старый Тбилиси",
+    "day_score": 90,
+    "night_score": 65,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.6934,
+    "lng": 44.8015,
+    "tips_en": [
+      "Stick to the well-lit main streets like Shardeni and Erekle II at night.",
+      "Watch for pickpockets in crowded tourist spots near the churches and squares.",
+      "Many cafes stay open late and are a safe place to duck into if you feel uneasy."
+    ],
+    "tips_ka": [
+      "ღამით მიჰყევი კარგად განათებულ მთავარ ქუჩებს, როგორიცაა შარდენი და ერეკლე II.",
+      "ფრთხილად იყავი ჯიბგირების მიმართ ხალხმრავალ ტურისტულ ადგილებში ეკლესიებთან და მოედნებთან.",
+      "ბევრი კაფე გვიან საათებამდეა ღია და უსაფრთხო თავშესაფარია, თუ არაკომფორტულად იგრძნობ თავს."
+    ],
+    "tips_ru": [
+      "Ночью держитесь хорошо освещённых главных улиц, таких как Шардени и Эрекле II.",
+      "Будьте внимательны к карманникам в людных туристических местах у церквей и площадей.",
+      "Многие кафе работают допоздна и являются безопасным местом, куда можно зайти, если почувствуете себя неуютно."
+    ]
+  },
+  {
+    "id": "rustaveli",
+    "name_en": "Rustaveli Avenue",
+    "name_ka": "რუსთაველის გამზირი",
+    "name_ru": "Проспект Руставели",
+    "day_score": 94,
+    "night_score": 78,
+    "day_level": "green",
+    "night_level": "green",
+    "lat": 41.6977,
+    "lng": 44.7975,
+    "tips_en": [
+      "The main avenue is well-lit, patrolled, and has security cameras throughout.",
+      "Busy with pedestrians until late — one of the safest areas at night.",
+      "Official taxis and metro (Rustaveli station) are easy to find here."
+    ],
+    "tips_ka": [
+      "მთავარი გამზირი კარგადაა განათებული, პატრულირებადი და კამერებით სავსე.",
+      "გვიან საათებამდე ხალხმრავალია — ღამით ერთ-ერთი ყველაზე უსაფრთხო ადგილია.",
+      "ოფიციალური ტაქსები და მეტრო (რუსთაველის სადგური) აქ ადვილად საპოვნია."
+    ],
+    "tips_ru": [
+      "Главный проспект хорошо освещён, патрулируется и оснащён камерами наблюдения.",
+      "Оживлённо пешеходами допоздна — один из самых безопасных районов ночью.",
+      "Официальные такси и метро (станция Руставели) легко найти здесь."
+    ]
+  },
+  {
+    "id": "vera",
+    "name_en": "Vera",
+    "name_ka": "ვერა",
+    "name_ru": "Вера",
+    "day_score": 85,
+    "night_score": 70,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.7133,
+    "lng": 44.7864,
+    "tips_en": [
+      "Quiet, mostly residential — safe but fewer people around late at night.",
+      "Vera Park is pleasant by day, less lit in the evening."
+    ],
+    "tips_ka": [
+      "მშვიდი, ძირითადად საცხოვრებელი უბანია — უსაფრთხოა, მაგრამ გვიან ღამით ნაკლები ხალხია.",
+      "ვერას პარკი დღისით სასიამოვნოა, საღამოს ნაკლებადაა განათებული."
+    ],
+    "tips_ru": [
+      "Тихий, преимущественно жилой район — безопасно, но поздно ночью меньше людей.",
+      "Парк Вера приятен днём, вечером освещён хуже."
+    ]
+  },
+  {
+    "id": "vake",
+    "name_en": "Vake",
+    "name_ka": "ვაკე",
+    "name_ru": "Ваке",
+    "day_score": 92,
+    "night_score": 80,
+    "day_level": "green",
+    "night_level": "green",
+    "lat": 41.7151,
+    "lng": 44.7563,
+    "tips_en": [
+      "Upscale residential area, popular with families, well-lit main streets.",
+      "Vake Park is safe for evening walks but stick to the lit paths.",
+      "Good area for international-standard clinics and pharmacies."
+    ],
+    "tips_ka": [
+      "ელიტური საცხოვრებელი უბანია, პოპულარულია ოჯახებში, მთავარი ქუჩები კარგადაა განათებული.",
+      "ვაკის პარკი უსაფრთხოა საღამოს სეირნობისთვის, მაგრამ განათებულ ბილიკებს მიჰყევი.",
+      "კარგი უბანია საერთაშორისო სტანდარტის კლინიკებისა და აფთიაქებისთვის."
+    ],
+    "tips_ru": [
+      "Престижный жилой район, популярен среди семей, главные улицы хорошо освещены.",
+      "Парк Ваке безопасен для вечерних прогулок, но держитесь освещённых дорожек.",
+      "Хороший район с клиниками и аптеками международного стандарта."
+    ]
+  },
+  {
+    "id": "saburtalo",
+    "name_en": "Saburtalo",
+    "name_ka": "საბურთალო",
+    "name_ru": "Сабуртало",
+    "day_score": 83,
+    "night_score": 68,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.7256,
+    "lng": 44.7519,
+    "tips_en": [
+      "Large student and residential district — generally safe, busy during the day.",
+      "Stick to main roads like Vazha-Pshavela Avenue at night."
+    ],
+    "tips_ka": [
+      "დიდი სტუდენტური და საცხოვრებელი რაიონია — ზოგადად უსაფრთხო, დღისით ხალხმრავალი.",
+      "ღამით მიჰყევი მთავარ გზებს, როგორიცაა ვაჟა-ფშაველას გამზირი."
+    ],
+    "tips_ru": [
+      "Крупный студенческий и жилой район — в целом безопасно, оживлённо днём.",
+      "Ночью держитесь главных дорог, таких как проспект Важа-Пшавела."
+    ]
+  },
+  {
+    "id": "marjanishvili",
+    "name_en": "Marjanishvili",
+    "name_ka": "მარჯანიშვილი",
+    "name_ru": "Марджанишвили",
+    "day_score": 80,
+    "night_score": 60,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.7107,
+    "lng": 44.8079,
+    "tips_en": [
+      "Busy market and nightlife area — keep bags zipped and close in crowds.",
+      "Popular bars at night draw crowds, which helps safety but watch your drink and belongings."
+    ],
+    "tips_ka": [
+      "საქმიანი ბაზრობისა და ღამის ცხოვრების უბანია — ჩანთა დაკეტილი გქონდეს ხალხმრავლობაში.",
+      "ღამით ბარები ხალხს იზიდავს, რაც უსაფრთხოებას ეხმარება, მაგრამ ყურადღება მიაქციე სასმელსა და ნივთებს."
+    ],
+    "tips_ru": [
+      "Оживлённый рыночный и ночной район — держите сумки закрытыми в толпе.",
+      "Ночью бары привлекают толпы, что повышает безопасность, но следите за напитком и вещами."
+    ]
+  },
+  {
+    "id": "aghmashenebeli",
+    "name_en": "Aghmashenebeli Avenue",
+    "name_ka": "აღმაშენებლის გამზირი",
+    "name_ru": "Проспект Агмашенебели",
+    "day_score": 82,
+    "night_score": 58,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.7057,
+    "lng": 44.8058,
+    "tips_en": [
+      "Trendy bar and restaurant strip — fun but watch for pickpocketing among drinking crowds.",
+      "Well-lit near the main avenue, darker on side streets."
+    ],
+    "tips_ka": [
+      "მოდური ბარებისა და რესტორნების ქუჩაა — სახალისოა, მაგრამ ფრთხილად იყავი ჯიბგირობასთან დაკავშირებით მსმელ ხალხში.",
+      "მთავარ გამზირთან კარგადაა განათებული, გვერდითი ქუჩები ბნელია."
+    ],
+    "tips_ru": [
+      "Модная улица баров и ресторанов — весело, но остерегайтесь карманников среди пьющей толпы.",
+      "У главного проспекта хорошее освещение, боковые улицы темнее."
+    ]
+  },
+  {
+    "id": "chughureti",
+    "name_en": "Chughureti",
+    "name_ka": "ჩუღურეთი",
+    "name_ru": "Чугурети",
+    "day_score": 75,
+    "night_score": 55,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.7108,
+    "lng": 44.8046,
+    "tips_en": [
+      "Mixed residential and commercial area near the train station — stay alert around transit hubs.",
+      "Fine during the day, prefer main roads at night."
+    ],
+    "tips_ka": [
+      "შერეული საცხოვრებელი და კომერციული უბანია რკინიგზის სადგურთან — იყავი ფხიზლად სატრანზიტო კვანძებთან.",
+      "დღისით ნორმალურია, ღამით მთავარ გზებს მიჰყევი."
+    ],
+    "tips_ru": [
+      "Смешанный жилой и коммерческий район у железнодорожного вокзала — будьте внимательны у транзитных узлов.",
+      "Днём спокойно, ночью держитесь главных дорог."
+    ]
+  },
+  {
+    "id": "avlabari",
+    "name_en": "Avlabari",
+    "name_ka": "ავლაბარი",
+    "name_ru": "Авлабари",
+    "day_score": 78,
+    "night_score": 62,
+    "day_level": "green",
+    "night_level": "yellow",
+    "lat": 41.6926,
+    "lng": 44.8103,
+    "tips_en": [
+      "Near government buildings and Holy Trinity Cathedral — moderate foot traffic and lighting.",
+      "Generally calm, but quieter side streets are less lit at night."
+    ],
+    "tips_ka": [
+      "მთავრობის შენობებთან და სამების ტაძართან ახლოსაა — ზომიერი ფეხით მოსიარულეთა ნაკადი და განათება.",
+      "ზოგადად მშვიდია, მაგრამ უფრო ჩუმი გვერდითი ქუჩები ღამით ნაკლებადაა განათებული."
+    ],
+    "tips_ru": [
+      "Рядом с правительственными зданиями и Собором Святой Троицы — умеренный пешеходный поток и освещение.",
+      "В целом спокойно, но более тихие боковые улицы ночью хуже освещены."
+    ]
+  },
+  {
+    "id": "ortachala",
+    "name_en": "Ortachala",
+    "name_ka": "ორთაჭალა",
+    "name_ru": "Ортачала",
+    "day_score": 60,
+    "night_score": 38,
+    "day_level": "yellow",
+    "night_level": "red",
+    "lat": 41.6789,
+    "lng": 44.8158,
+    "tips_en": [
+      "Industrial and transit area (near the international bus station) — fewer people around at night.",
+      "Better to use a taxi rather than walk here after dark."
+    ],
+    "tips_ka": [
+      "სამრეწველო და სატრანზიტო უბანია (საერთაშორისო ავტობუსის სადგურთან ახლოს) — ღამით ნაკლები ხალხია.",
+      "სჯობია ტაქსით გადაადგილება, ვიდრე ბნელში ფეხით სიარული."
+    ],
+    "tips_ru": [
+      "Промышленный и транзитный район (рядом с международной автостанцией) — ночью меньше людей.",
+      "Лучше воспользоваться такси, чем идти пешком после наступления темноты."
+    ]
+  },
+  {
+    "id": "didube",
+    "name_en": "Didube",
+    "name_ka": "დიდუბე",
+    "name_ru": "Дидубе",
+    "day_score": 58,
+    "night_score": 35,
+    "day_level": "yellow",
+    "night_level": "red",
+    "lat": 41.7387,
+    "lng": 44.7838,
+    "tips_en": [
+      "Major bus/marshrutka station area — higher pickpocket and overcharging risk, stay alert.",
+      "Avoid walking here alone at night; use official taxis instead."
+    ],
+    "tips_ka": [
+      "დიდი ავტობუსების/მარშრუტკების სადგურის ტერიტორიაა — ჯიბგირობისა და გადაფასების მაღალი რისკია, იყავი ფხიზლად.",
+      "ღამით მარტო ნუ იარები; სანაცვლოდ ოფიციალურ ტაქსებს გამოიყენე."
+    ],
+    "tips_ru": [
+      "Крупный автобусный/маршрутный вокзал — повышенный риск карманных краж и завышения цен, будьте бдительны.",
+      "Не ходите здесь одни ночью; вместо этого пользуйтесь официальными такси."
+    ]
+  },
+  {
+    "id": "gldani",
+    "name_en": "Gldani",
+    "name_ka": "გლდანი",
+    "name_ru": "Глдани",
+    "day_score": 65,
+    "night_score": 42,
+    "day_level": "yellow",
+    "night_level": "red",
+    "lat": 41.7822,
+    "lng": 44.7649,
+    "tips_en": [
+      "Large residential district far from the center — safe by day, poorly lit in many areas at night.",
+      "Not a typical tourist area; mainly relevant if staying with locals."
+    ],
+    "tips_ka": [
+      "დიდი საცხოვრებელი რაიონია ცენტრიდან შორს — დღისით უსაფრთხო, ღამით ბევრ ადგილას ცუდადაა განათებული.",
+      "არ არის ტიპური ტურისტული ადგილი; მნიშვნელოვანია მხოლოდ თუ ადგილობრივებთან ჩერდები."
+    ],
+    "tips_ru": [
+      "Крупный жилой район вдали от центра — безопасен днём, во многих местах плохо освещён ночью.",
+      "Не типичное туристическое место; актуально, только если вы остановились у местных жителей."
+    ]
+  },
+  {
+    "id": "varketili",
+    "name_en": "Varketili",
+    "name_ka": "ვარკეთილი",
+    "name_ru": "Варкетили",
+    "day_score": 62,
+    "night_score": 40,
+    "day_level": "yellow",
+    "night_level": "red",
+    "lat": 41.7213,
+    "lng": 44.8710,
+    "tips_en": [
+      "Residential outskirts with less foot traffic at night.",
+      "Rare for tourists to stay here; if you do, prefer taxis after dark."
+    ],
+    "tips_ka": [
+      "საცხოვრებელი გარეუბანია ნაკლები ფეხით მოსიარულით ღამით.",
+      "იშვიათია ტურისტისთვის აქ დარჩენა; თუ ხდება, ღამით ტაქსს ამჯობინე."
+    ],
+    "tips_ru": [
+      "Жилая окраина с меньшим пешеходным движением ночью.",
+      "Туристы редко здесь останавливаются; если это ваш случай, ночью предпочитайте такси."
+    ]
+  },
+  {
+    "id": "isani",
+    "name_en": "Isani",
+    "name_ka": "ისანი",
+    "name_ru": "Исани",
+    "day_score": 68,
+    "night_score": 45,
+    "day_level": "yellow",
+    "night_level": "red",
+    "lat": 41.6959,
+    "lng": 44.8321,
+    "tips_en": [
+      "Mixed residential and market area — fine by day, quieter and less lit at night.",
+      "Metro access is convenient during the day."
+    ],
+    "tips_ka": [
+      "შერეული საცხოვრებელი და სავაჭრო უბანია — დღისით ნორმალურია, ღამით უფრო ჩუმი და ნაკლებადაა განათებული.",
+      "მეტროზე წვდომა დღისით მოსახერხებელია."
+    ],
+    "tips_ru": [
+      "Смешанный жилой и торговый район — днём нормально, ночью тише и хуже освещён.",
+      "Доступ к метро удобен днём."
+    ]
+  },
+  {
+    "id": "samgori",
+    "name_en": "Samgori",
+    "name_ka": "სამგორი",
+    "name_ru": "Самгори",
+    "day_score": 55,
+    "night_score": 33,
+    "day_level": "yellow",
+    "night_level": "red",
+    "lat": 41.7069,
+    "lng": 44.8501,
+    "tips_en": [
+      "Known market and industrial area with a higher rate of petty theft reports.",
+      "Best avoided on foot after dark — use official taxis."
+    ],
+    "tips_ka": [
+      "ცნობილი სავაჭრო და სამრეწველო უბანია წვრილმანი ქურდობის მაღალი მაჩვენებლით.",
+      "სჯობია თავი აარიდო ღამით ფეხით სიარულს — გამოიყენე ოფიციალური ტაქსი."
+    ],
+    "tips_ru": [
+      "Известный торгово-промышленный район с повышенным уровнем мелких краж.",
+      "Лучше избегать пеших прогулок ночью — пользуйтесь официальным такси."
+    ]
+  }
+]

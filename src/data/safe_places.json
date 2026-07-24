@@ -1,0 +1,182 @@
+[
+  {
+    "id": "pharmacy_aversi_rustaveli",
+    "name": "Aversi Pharmacy - Rustaveli",
+    "type": "pharmacy24",
+    "address": "Rustaveli Ave area, Tbilisi",
+    "lat": 41.6981,
+    "lng": 44.7978,
+    "open_24h": true
+  },
+  {
+    "id": "pharmacy_psp_vake",
+    "name": "PSP Pharmacy - Vake",
+    "type": "pharmacy24",
+    "address": "Vake, Tbilisi",
+    "lat": 41.7148,
+    "lng": 44.7571,
+    "open_24h": true
+  },
+  {
+    "id": "pharmacy_gpc_marjanishvili",
+    "name": "GPC Pharmacy - Marjanishvili",
+    "type": "pharmacy24",
+    "address": "Marjanishvili, Tbilisi",
+    "lat": 41.7104,
+    "lng": 44.8072,
+    "open_24h": true
+  },
+  {
+    "id": "pharmacy_aversi_saburtalo",
+    "name": "Aversi Pharmacy - Saburtalo",
+    "type": "pharmacy24",
+    "address": "Vazha-Pshavela Ave, Saburtalo, Tbilisi",
+    "lat": 41.7261,
+    "lng": 44.7524,
+    "open_24h": true
+  },
+  {
+    "id": "pharmacy_psp_old_town",
+    "name": "PSP Pharmacy - Old Town",
+    "type": "pharmacy24",
+    "address": "Old Tbilisi, Tbilisi",
+    "lat": 41.6928,
+    "lng": 44.8021,
+    "open_24h": true
+  },
+  {
+    "id": "atm_tbc_freedom_square",
+    "name": "TBC Bank ATM - Freedom Square",
+    "type": "atm",
+    "address": "Freedom Square, Tbilisi",
+    "lat": 41.6939,
+    "lng": 44.8017,
+    "open_24h": true
+  },
+  {
+    "id": "atm_bog_rustaveli",
+    "name": "Bank of Georgia ATM - Rustaveli",
+    "type": "atm",
+    "address": "Rustaveli Ave, Tbilisi",
+    "lat": 41.6989,
+    "lng": 44.7969,
+    "open_24h": true
+  },
+  {
+    "id": "atm_tbc_vake_park",
+    "name": "TBC Bank ATM - Vake Park",
+    "type": "atm",
+    "address": "Vake Park area, Tbilisi",
+    "lat": 41.7159,
+    "lng": 44.7551,
+    "open_24h": true
+  },
+  {
+    "id": "atm_bog_saburtalo",
+    "name": "Bank of Georgia ATM - Saburtalo",
+    "type": "atm",
+    "address": "Vazha-Pshavela Ave, Saburtalo, Tbilisi",
+    "lat": 41.7249,
+    "lng": 44.7512,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_amc_vake",
+    "name": "American Medical Centers (AMC) Vake",
+    "type": "hospital",
+    "address": "11 Dimitri Arakishvili St, Vake, Tbilisi 0179",
+    "lat": 41.715,
+    "lng": 44.756,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_republican",
+    "name": "Republican Hospital (N. Kipshidze University Clinic)",
+    "address": "29 Vazha-Pshavela Ave, Tbilisi",
+    "type": "hospital",
+    "lat": 41.726,
+    "lng": 44.750,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_eristavi",
+    "name": "K. Eristavi National Surgery Center",
+    "type": "hospital",
+    "address": "5 Chachava St, Tbilisi",
+    "lat": 41.719,
+    "lng": 44.752,
+    "open_24h": true
+  },
+  {
+    "id": "police_old_tbilisi",
+    "name": "Old Tbilisi District Police Main Department",
+    "type": "police",
+    "address": "27 Tabukashvili St, Tbilisi",
+    "lat": 41.694,
+    "lng": 44.803,
+    "open_24h": true
+  },
+  {
+    "id": "police_mia_hq",
+    "name": "Ministry of Internal Affairs (HQ)",
+    "type": "police",
+    "address": "4 Gmiri Kursantebi St, Tbilisi",
+    "lat": 41.708,
+    "lng": 44.775,
+    "open_24h": true
+  },
+  {
+    "id": "police_tbilisi_division",
+    "name": "Tbilisi Police Division",
+    "type": "police",
+    "address": "136 Tsereteli Ave, Tbilisi",
+    "lat": 41.732,
+    "lng": 44.775,
+    "open_24h": true
+  },
+  {
+    "id": "toilet_tbilisi_mall",
+    "name": "Tbilisi Mall - Public Restrooms",
+    "type": "toilet",
+    "address": "Agmashenebeli Alley, Saburtalo, Tbilisi",
+    "lat": 41.737,
+    "lng": 44.745,
+    "open_24h": false
+  },
+  {
+    "id": "toilet_east_point",
+    "name": "East Point Mall - Public Restrooms",
+    "type": "toilet",
+    "address": "Kakheti Highway, Tbilisi",
+    "lat": 41.727,
+    "lng": 44.845,
+    "open_24h": false
+  },
+  {
+    "id": "toilet_galleria",
+    "name": "Galleria Tbilisi - Public Restrooms",
+    "type": "toilet",
+    "address": "Near Freedom Square, Tbilisi",
+    "lat": 41.694,
+    "lng": 44.800,
+    "open_24h": false
+  },
+  {
+    "id": "toilet_rustaveli_metro",
+    "name": "Rustaveli Metro Station - Restroom",
+    "type": "toilet",
+    "address": "Rustaveli Ave, Tbilisi",
+    "lat": 41.700,
+    "lng": 44.797,
+    "open_24h": true
+  },
+  {
+    "id": "toilet_vake_park",
+    "name": "Vake Park - Public Restroom",
+    "type": "toilet",
+    "address": "Vake Park, Tbilisi",
+    "lat": 41.716,
+    "lng": 44.750,
+    "open_24h": false
+  }
+]

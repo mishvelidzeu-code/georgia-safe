@@ -1,0 +1,90 @@
+{
+  "note_en": "Prices are approximate as of July 2026 and vary with demand, traffic, and time of day. Always check the fare shown in the app before confirming a ride.",
+  "note_ka": "ფასები მოცემულია დაახლოებით 2026 წლის ივლისის მდგომარეობით და იცვლება მოთხოვნის, საცობების და დღის დროის მიხედვით. ყოველთვის შეამოწმე აპში ნაჩვენები ფასი, სანამ მგზავრობას დაადასტურებ.",
+  "note_ru": "Цены приблизительны по состоянию на июль 2026 года и меняются в зависимости от спроса, трафика и времени суток. Всегда проверяйте тариф, указанный в приложении, прежде чем подтвердить поездку.",
+  "apps": [
+    {
+      "id": "bolt",
+      "name": "Bolt",
+      "name_ka": "Bolt",
+      "name_ru": "Bolt",
+      "recommended": true,
+      "description_en": "The most popular and reliable ride-hailing app in Georgia. Upfront pricing shown before booking, pay by card in-app or cash.",
+      "description_ka": "საქართველოში ყველაზე პოპულარული და საიმედო ტაქსის გამოძახების აპლიკაცია. ფასი ჩანს დაჯავშნამდე, გადახდა ბარათით აპში ან ნაღდი ფულით.",
+      "description_ru": "Самое популярное и надёжное приложение для вызова такси в Грузии. Цена показывается до бронирования, оплата картой в приложении или наличными.",
+      "how_to_use_en": "Download the Bolt app, set your pickup pin precisely, and confirm the fare shown before requesting.",
+      "how_to_use_ka": "ჩამოტვირთე Bolt-ის აპლიკაცია, ზუსტად დააყენე ასაყვანი წერტილი და დაადასტურე ნაჩვენები ფასი მოთხოვნამდე.",
+      "how_to_use_ru": "Скачайте приложение Bolt, точно укажите точку посадки и подтвердите показанный тариф перед заказом."
+    },
+    {
+      "id": "yandex_go",
+      "name": "Yandex Go",
+      "name_ka": "Yandex Go",
+      "name_ru": "Yandex Go",
+      "recommended": true,
+      "description_en": "Widely used alternative to Bolt with similar coverage and pricing across Tbilisi.",
+      "description_ka": "Bolt-ის ფართოდ გავრცელებული ალტერნატივა, მსგავსი დაფარვითა და ფასებით მთელ თბილისში.",
+      "description_ru": "Широко используемая альтернатива Bolt с аналогичным покрытием и ценами по всему Тбилиси.",
+      "how_to_use_en": "Requires the Yandex Go app; works similarly to Bolt with upfront pricing.",
+      "how_to_use_ka": "საჭიროებს Yandex Go-ს აპლიკაციას; მუშაობს Bolt-ის მსგავსად, ფასის წინასწარი ჩვენებით.",
+      "how_to_use_ru": "Требуется приложение Yandex Go; работает аналогично Bolt с предварительным показом цены."
+    },
+    {
+      "id": "official_taxi",
+      "name": "Official airport/hotel taxi counters",
+      "name_ka": "აეროპორტის/სასტუმროს ოფიციალური ტაქსის სალარო",
+      "name_ru": "Официальные стойки такси в аэропорту/отеле",
+      "recommended": false,
+      "description_en": "Booths at the airport or hotel front desks can arrange a taxi at a fixed price, usually higher than app-based options but simple if you don't have a local SIM yet.",
+      "description_ka": "აეროპორტში ან სასტუმროს რეცეფციაზე არსებული სალარო შეუძლია მოაწყოს ტაქსი ფიქსირებულ ფასად, ჩვეულებრივ უფრო ძვირი, ვიდრე აპლიკაციები, მაგრამ მარტივია, თუ ჯერ არ გაქვს ადგილობრივი სიმ ბარათი.",
+      "description_ru": "Стойки в аэропорту или на стойке регистрации отеля могут организовать такси по фиксированной цене, обычно выше, чем варианты через приложение, но это просто, если у вас пока нет местной SIM-карты.",
+      "how_to_use_en": "Ask your hotel reception or the airport taxi counter for a fixed-price ride.",
+      "how_to_use_ka": "სთხოვე სასტუმროს რეცეფციას ან აეროპორტის ტაქსის სალაროს ფიქსირებული ფასის მგზავრობა.",
+      "how_to_use_ru": "Спросите на стойке регистрации отеля или в стойке такси аэропорта о поездке по фиксированной цене."
+    }
+  ],
+  "estimated_fares_gel": [
+    {
+      "route_en": "Tbilisi Airport to City Center (Bolt/Yandex Go)",
+      "route_ka": "თბილისის აეროპორტიდან ქალაქის ცენტრამდე (Bolt/Yandex Go)",
+      "route_ru": "Из аэропорта Тбилиси до центра города (Bolt/Yandex Go)",
+      "low": 15,
+      "high": 35
+    },
+    {
+      "route_en": "Short ride within the city center (e.g. Rustaveli to Old Town)",
+      "route_ka": "მოკლე მოგზაურობა ქალაქის ცენტრში (მაგ. რუსთაველიდან ძველ ქალაქამდე)",
+      "route_ru": "Короткая поездка в центре города (например, от Руставели до Старого города)",
+      "low": 5,
+      "high": 12
+    },
+    {
+      "route_en": "Cross-town ride (e.g. Vake to Old Town)",
+      "route_ka": "ქალაქის გავლით მოგზაურობა (მაგ. ვაკედან ძველ ქალაქამდე)",
+      "route_ru": "Поездка через город (например, из Ваке в Старый город)",
+      "low": 10,
+      "high": 20
+    }
+  ],
+  "tips_en": [
+    "Don't hail taxis directly on the street — use Bolt or Yandex Go for upfront, fair pricing.",
+    "If a street driver says the meter is broken and offers a flat rate, it's almost always inflated — use an app instead.",
+    "Confirm the driver and license plate in the app match the car before getting in.",
+    "Keep some cash in small bills in case a driver can't process in-app card payment.",
+    "Fares increase during rain, late-night hours, and high-demand periods — this is normal surge pricing, not a scam."
+  ],
+  "tips_ka": [
+    "ტაქსს ქუჩაში პირდაპირ ნუ გააჩერებ — გამოიყენე Bolt ან Yandex Go სამართლიანი, წინასწარი ფასისთვის.",
+    "თუ ქუჩის მძღოლი ამბობს, რომ მრიცხველი გატეხილია და გთავაზობს ფიქსირებულ ტარიფს, ის თითქმის ყოველთვის გაბერილია — სამაგიეროდ გამოიყენე აპლიკაცია.",
+    "შესვლამდე დარწმუნდი, რომ აპში მითითებული მძღოლი და ნომერი ემთხვევა მანქანას.",
+    "ინახე ცოტა ნაღდი ფული წვრილ კუპიურებში იმ შემთხვევისთვის, თუ მძღოლს არ შეუძლია აპში ბარათით გადახდის მიღება.",
+    "ფასები იზრდება წვიმის დროს, გვიან ღამის საათებში და მაღალი მოთხოვნის პერიოდებში — ეს ჩვეულებრივი surge ფასწარმოქმნაა და არა თაღლითობა."
+  ],
+  "tips_ru": [
+    "Не ловите такси прямо на улице — используйте Bolt или Yandex Go для честной, заранее известной цены.",
+    "Если уличный водитель говорит, что счётчик сломан, и предлагает фиксированную цену, она почти всегда завышена — используйте вместо этого приложение.",
+    "Перед посадкой убедитесь, что водитель и номер машины в приложении совпадают с машиной.",
+    "Держите немного наличных мелкими купюрами на случай, если водитель не может принять оплату картой через приложение.",
+    "Тарифы растут во время дождя, поздней ночью и в периоды высокого спроса — это обычное динамическое ценообразование, а не мошенничество."
+  ]
+}
