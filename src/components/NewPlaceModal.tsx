@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,6 +12,14 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -70,6 +78,47 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
     reset();
     onClose();
   };
+
+  // Swipe-down-to-dismiss. The sheet holds a text field and tappable chips, so
+  // the gesture only activates after 15px of downward movement and gives up
+  // entirely on upward movement — a tap on a star or a chip never turns into
+  // a drag. Below the threshold the sheet springs back where it was.
+  const translateY = useSharedValue(0);
+
+  useEffect(() => {
+    if (visible) translateY.value = 0;
+  }, [visible, translateY]);
+
+  // runOnJS needs a plain JS closure it can turn into a remote function.
+  // Passing `Keyboard.dismiss` straight in fails at runtime — the worklet runs
+  // on the UI thread, where the `Keyboard` native module doesn't exist, so the
+  // property read throws before runOnJS ever gets called.
+  const dismissKeyboard = () => Keyboard.dismiss();
+
+  const dragGesture = Gesture.Pan()
+    .activeOffsetY(15)
+    .failOffsetY(-15)
+    .onStart(() => {
+      runOnJS(dismissKeyboard)();
+    })
+    .onUpdate((e) => {
+      translateY.value = Math.max(0, e.translationY);
+    })
+    .onEnd((e) => {
+      // A short flick counts as much as a long slow drag, matching how every
+      // native sheet behaves.
+      if (e.translationY > 120 || e.velocityY > 800) {
+        translateY.value = withTiming(600, { duration: 180 }, () => {
+          runOnJS(handleClose)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20 });
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const pickFromCamera = async () => {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -144,7 +193,11 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
             was no way to dismiss it once the comment field was focused
             (device report: keyboard stuck open). */}
         <Pressable style={styles.overlay} onPress={Keyboard.dismiss}>
-        <View style={styles.sheet}>
+        <GestureDetector gesture={dragGesture}>
+        <Animated.View style={[styles.sheet, sheetStyle]}>
+          {/* Grab bar — the affordance that tells the tourist the sheet can be
+              pulled down, and the reason the gesture is discoverable at all. */}
+          <View style={styles.grabber} />
           <Text style={styles.title}>{t('newPlace.title')}</Text>
           <Text style={styles.coords}>
             {lat.toFixed(5)}, {lng.toFixed(5)}
@@ -240,7 +293,8 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
           <Pressable style={styles.cancel} onPress={handleClose} disabled={submitting}>
             <Text style={styles.cancelText}>{t('common.cancel')}</Text>
           </Pressable>
-        </View>
+        </Animated.View>
+        </GestureDetector>
         </Pressable>
       </KeyboardAvoidingView>
     </Modal>
@@ -311,6 +365,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
     padding: 20,
     paddingBottom: 28,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginTop: -8,
+    marginBottom: 12,
   },
   title: {
     color: colors.text,

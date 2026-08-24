@@ -30,14 +30,10 @@ export async function registerForNotificationsAsync(): Promise<boolean> {
 }
 
 /**
- * Immediately presents a local notification (home/lock screen banner). Used
- * for the evening safety-zone nudge on the Map. Never throws — if the user
- * denied notifications it just no-ops.
+ * Immediately presents a local notification (home/lock screen banner).
+ * Never throws — if the user denied notifications it just no-ops.
  */
-export async function presentEveningZoneNotification(
-  title: string,
-  body: string,
-): Promise<void> {
+export async function presentLocalNotification(title: string, body: string): Promise<void> {
   try {
     await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
@@ -46,4 +42,9 @@ export async function presentEveningZoneNotification(
   } catch {
     // Permissions denied or notifications unavailable — non-critical.
   }
+}
+
+/** Used for the evening safety-zone nudge on the Map. */
+export async function presentEveningZoneNotification(title: string, body: string): Promise<void> {
+  return presentLocalNotification(title, body);
 }

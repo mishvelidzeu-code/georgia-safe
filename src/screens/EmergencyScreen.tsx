@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import emergencyData from '../data/emergency.json';
 import { getSelectedCountryId, setSelectedCountryId } from '../lib/storage';
+import { findCountry, findEmbassy, countryName } from '../lib/countries';
 import CountryPickerModal from '../components/CountryPickerModal';
 import FakeCallButton from '../components/FakeCallButton';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -47,7 +48,7 @@ function openDirections(address: string) {
 }
 
 export default function EmergencyScreen() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const emergency = useRemoteData(emergencyData as EmergencyData, fetchEmergency);
   const [selectedCountryId, setSelectedCountryIdState] = useState<string | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -73,8 +74,10 @@ export default function EmergencyScreen() {
     setRefreshing(false);
   }, []);
 
-  const selectedEmbassy =
-    emergency.embassies.find((embassy) => embassy.id === selectedCountryId) ?? null;
+  const selectedEmbassy = findEmbassy(selectedCountryId, emergency.embassies);
+  // A country can be chosen that simply has no embassy here — distinguish
+  // that from "hasn't picked a country yet", which needs a different prompt.
+  const selectedCountry = findCountry(selectedCountryId);
 
   return (
     <View style={styles.container}>
@@ -154,6 +157,18 @@ export default function EmergencyScreen() {
                 </Pressable>
               </View>
             </>
+          ) : selectedCountry ? (
+            <>
+              <Text style={styles.rowTitle}>{countryName(selectedCountry, language)}</Text>
+              <Text style={styles.noEmbassyTitle}>{t('emergency.noEmbassyTitle')}</Text>
+              <Text style={styles.address}>{t('emergency.noEmbassyBody')}</Text>
+              <Pressable
+                style={styles.selectCountryButton}
+                onPress={() => setPickerVisible(true)}
+              >
+                <Text style={styles.selectCountryText}>{t('common.change')}</Text>
+              </Pressable>
+            </>
           ) : (
             <Pressable style={styles.selectCountryButton} onPress={() => setPickerVisible(true)}>
               <Text style={styles.selectCountryText}>{t('common.selectCountry')}</Text>
@@ -178,7 +193,6 @@ export default function EmergencyScreen() {
 
       <CountryPickerModal
         visible={pickerVisible}
-        embassies={emergency.embassies}
         onClose={() => setPickerVisible(false)}
         onSelect={handleSelectCountry}
       />
@@ -252,6 +266,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
     marginBottom: 10,
+  },
+  noEmbassyTitle: {
+    color: colors.warning,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 6,
   },
   cardActions: {
     flexDirection: 'row',

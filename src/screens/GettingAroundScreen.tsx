@@ -1,34 +1,40 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import taxiGuide from '../data/taxi_guide.json';
 import rentalsData from '../data/rentals.json';
 import { useLanguage } from '../i18n/LanguageContext';
-import { localizedField, localizedList } from '../lib/localizeData';
+import { localizedField } from '../lib/localizeData';
+import { fetchRentalCars } from '../lib/rentals';
+import type { RentalCar } from '../lib/rentals';
+import { getGuardianContext } from '../lib/guardianContext';
+import RentalCarCard from '../components/RentalCarCard';
 
-type RentalPartner = {
+// App-based scooter sharing (Scroll, JET, Yandex Go) — opened, not phoned.
+// Car rentals are no longer bundled data: they come from approved partners
+// (see src/lib/rentals.ts).
+type ScooterApp = {
   id: string;
   name_en: string;
   name_ka: string;
   name_ru: string;
-  phone: string;
+  cities_en: string;
+  cities_ka: string;
+  cities_ru: string;
   note_en: string;
   note_ka: string;
   note_ru: string;
+  // False keeps the card visible but dimmed and unopenable — a service that
+  // has paused is more useful shown as paused than silently removed.
+  available: boolean;
 };
 
-const carRentals = rentalsData.car_rentals as RentalPartner[];
-const scooterRentals = rentalsData.scooter_rentals as RentalPartner[];
-
-function callNumber(phone: string) {
-  // Uses the cellular voice network, not internet data — works offline too.
-  Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() => {});
-}
+const scooterApps = rentalsData.scooter_apps as ScooterApp[];
 
 type TaxiApp = {
   id: string;
-  name: string;
+  name_en: string;
   name_ka: string;
   name_ru: string;
   recommended: boolean;
@@ -51,9 +57,14 @@ type FareEstimate = {
 const apps = taxiGuide.apps as TaxiApp[];
 const fares = taxiGuide.estimated_fares_gel as FareEstimate[];
 
-const APP_URLS: Record<string, { scheme: string; web: string }> = {
+// Only Bolt and Yandex have declared URL schemes (see app.json's
+// LSApplicationQueriesSchemes). The rest open on the web, which on iOS still
+// hands off to the installed app when it claims the domain.
+const APP_URLS: Record<string, { scheme?: string; web: string }> = {
   bolt: { scheme: 'bolt://', web: 'https://bolt.eu/en/' },
   yandex_go: { scheme: 'yandextaxi://', web: 'https://go.yandex.com/' },
+  scroll: { web: 'https://scroll.eco/' },
+  jet: { web: 'https://jetsharing.ge/' },
 };
 
 async function openTaxiApp(appId: string) {
@@ -63,6 +74,10 @@ async function openTaxiApp(appId: string) {
   // iOS throws if the scheme isn't declared in LSApplicationQueriesSchemes
   // (see app.json ios.infoPlist) instead of just returning false — always
   // fall back to the web URL on any failure so the button never dead-ends.
+  if (!urls.scheme) {
+    await Linking.openURL(urls.web).catch(() => {});
+    return;
+  }
   try {
     const canOpen = await Linking.canOpenURL(urls.scheme);
     await Linking.openURL(canOpen ? urls.scheme : urls.web);
@@ -71,29 +86,39 @@ async function openTaxiApp(appId: string) {
   }
 }
 
-function localizedAppName(app: TaxiApp, language: 'en' | 'ka' | 'ru'): string {
-  if (language === 'ka') return app.name_ka;
-  if (language === 'ru') return app.name_ru;
-  return app.name;
-}
-
+// The two ride-hailing apps a tourist actually needs, shown as quick cards.
 const QUICK_APP_IDS = ['bolt', 'yandex_go'];
 
 export default function GettingAroundScreen() {
   const { t, language } = useLanguage();
-  const tips = localizedList(taxiGuide, 'tips', language);
   const [refreshing, setRefreshing] = useState(false);
+  const [cars, setCars] = useState<RentalCar[]>([]);
+  const [city, setCity] = useState<string | null>(null);
 
   const quickApps = apps.filter((app) => QUICK_APP_IDS.includes(app.id));
-  const otherApps = apps.filter((app) => !QUICK_APP_IDS.includes(app.id));
+
+  // Cars are filtered to the city the tourist is actually in — a rental in
+  // Batumi is noise for someone standing in Tbilisi. When the city can't be
+  // determined (permission denied, offline) the filter is dropped and every
+  // approved car is shown, which is better than an empty section.
+  const loadCars = useCallback(async () => {
+    const context = await getGuardianContext({ includeRentals: false });
+    setCity(context.city ?? null);
+    try {
+      setCars(await fetchRentalCars(context.city));
+    } catch {
+      setCars([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadCars();
+  }, [loadCars]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    // Data is bundled locally, so there's nothing to re-fetch yet — this
-    // just gives the standard pull-to-refresh feedback. Once Phase 4 wires
-    // up Supabase, this is where we'd re-fetch fares/tips/partners.
-    setTimeout(() => setRefreshing(false), 500);
-  }, []);
+    void loadCars().finally(() => setRefreshing(false));
+  }, [loadCars]);
 
   return (
     <ScrollView
@@ -104,7 +129,6 @@ export default function GettingAroundScreen() {
       }
     >
       <Text style={styles.sectionTitle}>{t('gettingAround.title')}</Text>
-      <Text style={styles.note}>{localizedField(taxiGuide, 'note', language)}</Text>
 
       {/* Bolt / Yandex Go are the two most-used ride apps — always pinned as
           a quick side-by-side row at the top so they're the first thing
@@ -113,7 +137,7 @@ export default function GettingAroundScreen() {
         {quickApps.map((app) => (
           <View key={app.id} style={styles.quickCard}>
             <Ionicons name="car" size={22} color={colors.text} />
-            <Text style={styles.quickCardTitle}>{localizedAppName(app, language)}</Text>
+            <Text style={styles.quickCardTitle}>{localizedField(app, 'name', language)}</Text>
             {app.recommended && (
               <View style={styles.recommendedBadge}>
                 <Text style={styles.recommendedText}>{t('gettingAround.recommended')}</Text>
@@ -129,58 +153,49 @@ export default function GettingAroundScreen() {
         ))}
       </View>
 
-      {quickApps.map((app) => (
-        <View key={`${app.id}-details`} style={styles.card}>
-          <Text style={styles.cardTitle}>{localizedAppName(app, language)}</Text>
-          <Text style={styles.cardDescription}>
-            {localizedField(app, 'description', language)}
-          </Text>
-        </View>
-      ))}
-
-      {otherApps.map((app) => (
-        <View key={app.id} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="car" size={20} color={colors.text} />
-            <Text style={styles.cardTitle}>{localizedAppName(app, language)}</Text>
+      {/* Scooter apps sit directly under the ride apps as a second, tighter
+          row — three across, so they read as one continuous block of "apps
+          you can open" rather than a separate section further down. */}
+      <View style={styles.quickRow}>
+        {scooterApps.map((app) => (
+          <View
+            key={app.id}
+            style={[styles.quickCard, styles.miniCard, !app.available && styles.miniCardOff]}
+          >
+            <Ionicons
+              name="bicycle"
+              size={18}
+              color={app.available ? colors.text : colors.textMuted}
+            />
+            <Text
+              style={[styles.miniCardTitle, !app.available && styles.miniCardTitleOff]}
+              numberOfLines={1}
+            >
+              {localizedField(app, 'name', language)}
+            </Text>
+            {app.available ? (
+              <Pressable
+                style={[styles.openButton, styles.miniOpenButton]}
+                onPress={() => openTaxiApp(app.id)}
+              >
+                <Text style={styles.miniOpenText}>{t('gettingAround.open')}</Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.miniUnavailable}>{t('gettingAround.unavailable')}</Text>
+            )}
           </View>
-          <Text style={styles.cardDescription}>
-            {localizedField(app, 'description', language)}
-          </Text>
-        </View>
-      ))}
+        ))}
+      </View>
 
       <Text style={styles.sectionTitle}>{t('gettingAround.carRental')}</Text>
-      {carRentals.map((partner) => (
-        <View key={partner.id} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="car-sport" size={20} color={colors.text} />
-            <Text style={styles.cardTitle}>{localizedField(partner, 'name', language)}</Text>
-          </View>
-          <Text style={styles.cardDescription}>{localizedField(partner, 'note', language)}</Text>
-          <Pressable style={styles.openButton} onPress={() => callNumber(partner.phone)}>
-            <Text style={styles.openButtonText}>
-              {t('common.call')} {partner.phone}
-            </Text>
-          </Pressable>
+      {city ? <Text style={styles.cityLine}>{city}</Text> : null}
+      {cars.length === 0 ? (
+        <View style={styles.card}>
+          <Text style={styles.cardDescription}>{t('gettingAround.carRentalEmpty')}</Text>
         </View>
-      ))}
-
-      <Text style={styles.sectionTitle}>{t('gettingAround.scooterRental')}</Text>
-      {scooterRentals.map((partner) => (
-        <View key={partner.id} style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="bicycle" size={20} color={colors.text} />
-            <Text style={styles.cardTitle}>{localizedField(partner, 'name', language)}</Text>
-          </View>
-          <Text style={styles.cardDescription}>{localizedField(partner, 'note', language)}</Text>
-          <Pressable style={styles.openButton} onPress={() => callNumber(partner.phone)}>
-            <Text style={styles.openButtonText}>
-              {t('common.call')} {partner.phone}
-            </Text>
-          </Pressable>
-        </View>
-      ))}
+      ) : (
+        cars.map((car) => <RentalCarCard key={car.id} car={car} />)
+      )}
 
       <Text style={styles.sectionTitle}>{t('gettingAround.estimatedFares')}</Text>
       <View style={styles.card}>
@@ -191,15 +206,6 @@ export default function GettingAroundScreen() {
               {fare.low}-{fare.high} ₾
             </Text>
           </View>
-        ))}
-      </View>
-
-      <Text style={styles.sectionTitle}>{t('gettingAround.tips')}</Text>
-      <View style={styles.card}>
-        {tips.map((tip) => (
-          <Text key={tip} style={styles.tip}>
-            • {tip}
-          </Text>
         ))}
       </View>
     </ScrollView>
@@ -223,17 +229,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
-  note: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontStyle: 'italic',
-    marginBottom: 12,
-  },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
+  },
+  cityLine: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginTop: -6,
+    marginBottom: 8,
   },
   quickRow: {
     flexDirection: 'row',
@@ -248,6 +254,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  // Three-across variant of quickCard: tighter padding and smaller type so
+  // three scooter apps fit on one line without wrapping.
+  miniCard: {
+    padding: 10,
+    gap: 6,
+  },
+  miniCardTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  miniOpenButton: {
+    width: '100%',
+    paddingVertical: 6,
+  },
+  miniCardOff: {
+    opacity: 0.55,
+  },
+  miniCardTitleOff: {
+    color: colors.textMuted,
+  },
+  miniUnavailable: {
+    color: colors.textMuted,
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 13,
+  },
+  miniOpenText: {
+    color: colors.background,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   quickCardTitle: {
     color: colors.text,
     fontSize: 15,
@@ -256,18 +295,6 @@ const styles = StyleSheet.create({
   },
   quickOpenButton: {
     alignSelf: 'stretch',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  cardTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '700',
-    flex: 1,
   },
   recommendedBadge: {
     backgroundColor: colors.safe,
@@ -314,11 +341,5 @@ const styles = StyleSheet.create({
     color: colors.safe,
     fontSize: 14,
     fontWeight: '700',
-  },
-  tip: {
-    color: colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 6,
   },
 });

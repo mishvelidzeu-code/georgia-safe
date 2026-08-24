@@ -1,4 +1,4 @@
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme, useNavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -10,6 +10,11 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SosButton from '../components/SosButton';
 import GuardianButton from '../components/GuardianButton';
 import NightSafetyBanner from '../components/NightSafetyBanner';
+import GuardianSuggestionBubble from '../components/GuardianSuggestionBubble';
+import GuardianModal from '../components/GuardianModal';
+import { GuardianChatProvider } from '../guardian/GuardianChatContext';
+import { PremiumProvider } from '../premium/PremiumContext';
+import PaywallModal from '../components/PaywallModal';
 
 const Tab = createBottomTabNavigator();
 
@@ -59,8 +64,18 @@ const TAB_ICONS: Record<string, IconName> = {
 };
 
 export default function RootNavigator() {
+  // GuardianSuggestionBubble reads the current route imperatively (not via
+  // useNavigationState) because it's rendered as a sibling of Tab.Navigator,
+  // not a descendant of it — useNavigationState requires being inside an
+  // actual navigator, which a sibling of NavigationContainer isn't.
+  const navigationRef = useNavigationContainerRef();
+
   return (
-    <NavigationContainer theme={navigationTheme}>
+    // The provider wraps everything so the assistant's conversation outlives
+    // tab switches; GuardianModal below is the app's only chat window.
+    <PremiumProvider>
+    <GuardianChatProvider>
+    <NavigationContainer ref={navigationRef} theme={navigationTheme}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
@@ -84,6 +99,11 @@ export default function RootNavigator() {
         <Tab.Screen name="Profile" component={ProfileScreenWithSos} />
       </Tab.Navigator>
       <NightSafetyBanner />
+      <GuardianSuggestionBubble navigationRef={navigationRef} />
+      <GuardianModal />
+      <PaywallModal />
     </NavigationContainer>
+    </GuardianChatProvider>
+    </PremiumProvider>
   );
 }

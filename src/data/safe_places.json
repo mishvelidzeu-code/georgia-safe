@@ -108,6 +108,78 @@
     "open_24h": true
   },
   {
+    "id": "hospital_caucasus_medical_centre",
+    "name": "Caucasus Medical Centre (CMC)",
+    "type": "hospital",
+    "address": "23 Petre Kavtaradze St, Saburtalo, Tbilisi",
+    "lat": 41.7221,
+    "lng": 44.7315,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_new_hospitals",
+    "name": "New Hospitals",
+    "type": "hospital",
+    "address": "12 Krtsanisi St, Krtsanisi, Tbilisi",
+    "lat": 41.675,
+    "lng": 44.8245,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_american_tbilisi",
+    "name": "American Hospital Tbilisi (not AMC Vake)",
+    "type": "hospital",
+    "address": "17 Ushangi Chkheidze St, Tbilisi 0102",
+    "lat": 41.7098,
+    "lng": 44.7927,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_bokeria",
+    "name": "Iv. Bokeria University Hospital",
+    "type": "hospital",
+    "address": "8 Zurab Iarajuli St, Samgori, Tbilisi 0137",
+    "lat": 41.6678,
+    "lng": 44.8888,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_tbilisi_central",
+    "name": "Tbilisi Central Hospital",
+    "type": "hospital",
+    "address": "1 Konstantine Chachava St, Tbilisi 0159",
+    "lat": 41.7751,
+    "lng": 44.7765,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_khechinashvili",
+    "name": "S. Khechinashvili University Clinic",
+    "type": "hospital",
+    "address": "33 Ilia Chavchavadze Ave, Tbilisi 0179",
+    "lat": 41.7116,
+    "lng": 44.762,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_tsmu_first",
+    "name": "TSMU First University Clinic",
+    "type": "hospital",
+    "address": "4 Gudamakari St, Gldani-Nadzaladevi, Tbilisi",
+    "lat": 41.7693,
+    "lng": 44.7966,
+    "open_24h": true
+  },
+  {
+    "id": "hospital_mediclub_georgia",
+    "name": "MediClubGeorgia",
+    "type": "hospital",
+    "address": "22a Tashkenti St, Tbilisi 0160",
+    "lat": 41.7284,
+    "lng": 44.7633,
+    "open_24h": false
+  },
+  {
     "id": "police_old_tbilisi",
     "name": "Old Tbilisi District Police Main Department",
     "type": "police",

@@ -5,7 +5,7 @@ import { colors } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getGuardianContext } from '../lib/guardianContext';
 import type { GuardianContext } from '../lib/guardianContext';
-import GuardianModal from './GuardianModal';
+import { useGuardianChat } from '../guardian/GuardianChatContext';
 
 // Re-check every 5 minutes so the banner can still appear if the tourist
 // already had the app open when it turned into a risky hour (not just at
@@ -31,13 +31,14 @@ export default function NightSafetyBanner() {
   const { t } = useLanguage();
   const [context, setContext] = useState<GuardianContext | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const [guardianVisible, setGuardianVisible] = useState(false);
+  const { open } = useGuardianChat();
 
   useEffect(() => {
     let cancelled = false;
 
     function check() {
-      getGuardianContext().then((result) => {
+      // Re-checked every 5 minutes and only uses zone/time — skip the rentals.
+      getGuardianContext({ includeRentals: false }).then((result) => {
         if (!cancelled) setContext(result);
       });
     }
@@ -52,20 +53,17 @@ export default function NightSafetyBanner() {
 
   const handleSuggestRoute = useCallback(() => {
     setDismissed(true);
-    setGuardianVisible(true);
-  }, []);
+    if (context) open(composeAutoMessage(context, t));
+  }, [context, open, t]);
 
   const isRisky =
     context !== null &&
     context.timeOfDay === 'night' &&
     (context.zoneLevel === 'yellow' || context.zoneLevel === 'red');
 
-  if (!isRisky || dismissed) {
-    // Still render the modal (hidden) so state isn't lost if it was opened
-    // just before conditions changed — in practice this is effectively a
-    // no-op render.
-    return <GuardianModal visible={guardianVisible} onClose={() => setGuardianVisible(false)} />;
-  }
+  // The chat is rendered once at the root now, so there is nothing to keep
+  // alive here — an inactive banner renders nothing at all.
+  if (!isRisky || dismissed) return null;
 
   return (
     <>
@@ -83,12 +81,6 @@ export default function NightSafetyBanner() {
           </Pressable>
         </View>
       </View>
-
-      <GuardianModal
-        visible={guardianVisible}
-        onClose={() => setGuardianVisible(false)}
-        autoSendMessage={composeAutoMessage(context, t)}
-      />
     </>
   );
 }

@@ -1,0 +1,1745 @@
+[
+  {
+    "code": "AF",
+    "name_en": "Afghanistan",
+    "name_ka": "ავღანეთი",
+    "name_ru": "Афганистан",
+    "embassyId": null
+  },
+  {
+    "code": "AX",
+    "name_en": "Åland Islands",
+    "name_ka": "ალანდის კუნძულები",
+    "name_ru": "Аландские о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "AL",
+    "name_en": "Albania",
+    "name_ka": "ალბანეთი",
+    "name_ru": "Албания",
+    "embassyId": null
+  },
+  {
+    "code": "DZ",
+    "name_en": "Algeria",
+    "name_ka": "ალჟირი",
+    "name_ru": "Алжир",
+    "embassyId": null
+  },
+  {
+    "code": "AS",
+    "name_en": "American Samoa",
+    "name_ka": "ამერიკის სამოა",
+    "name_ru": "Американское Самоа",
+    "embassyId": null
+  },
+  {
+    "code": "AD",
+    "name_en": "Andorra",
+    "name_ka": "ანდორა",
+    "name_ru": "Андорра",
+    "embassyId": null
+  },
+  {
+    "code": "AO",
+    "name_en": "Angola",
+    "name_ka": "ანგოლა",
+    "name_ru": "Ангола",
+    "embassyId": null
+  },
+  {
+    "code": "AI",
+    "name_en": "Anguilla",
+    "name_ka": "ანგილია",
+    "name_ru": "Ангилья",
+    "embassyId": null
+  },
+  {
+    "code": "AG",
+    "name_en": "Antigua & Barbuda",
+    "name_ka": "ანტიგუა და ბარბუდა",
+    "name_ru": "Антигуа и Барбуда",
+    "embassyId": null
+  },
+  {
+    "code": "AR",
+    "name_en": "Argentina",
+    "name_ka": "არგენტინა",
+    "name_ru": "Аргентина",
+    "embassyId": null
+  },
+  {
+    "code": "AM",
+    "name_en": "Armenia",
+    "name_ka": "სომხეთი",
+    "name_ru": "Армения",
+    "embassyId": "armenia"
+  },
+  {
+    "code": "AW",
+    "name_en": "Aruba",
+    "name_ka": "არუბა",
+    "name_ru": "Аруба",
+    "embassyId": null
+  },
+  {
+    "code": "AC",
+    "name_en": "Ascension Island",
+    "name_ka": "ამაღლების კუნძული",
+    "name_ru": "о-в Вознесения",
+    "embassyId": null
+  },
+  {
+    "code": "AU",
+    "name_en": "Australia",
+    "name_ka": "ავსტრალია",
+    "name_ru": "Австралия",
+    "embassyId": null
+  },
+  {
+    "code": "AT",
+    "name_en": "Austria",
+    "name_ka": "ავსტრია",
+    "name_ru": "Австрия",
+    "embassyId": null
+  },
+  {
+    "code": "AZ",
+    "name_en": "Azerbaijan",
+    "name_ka": "აზერბაიჯანი",
+    "name_ru": "Азербайджан",
+    "embassyId": "azerbaijan"
+  },
+  {
+    "code": "BS",
+    "name_en": "Bahamas",
+    "name_ka": "ბაჰამის კუნძულები",
+    "name_ru": "Багамы",
+    "embassyId": null
+  },
+  {
+    "code": "BH",
+    "name_en": "Bahrain",
+    "name_ka": "ბაჰრეინი",
+    "name_ru": "Бахрейн",
+    "embassyId": null
+  },
+  {
+    "code": "BD",
+    "name_en": "Bangladesh",
+    "name_ka": "ბანგლადეში",
+    "name_ru": "Бангладеш",
+    "embassyId": null
+  },
+  {
+    "code": "BB",
+    "name_en": "Barbados",
+    "name_ka": "ბარბადოსი",
+    "name_ru": "Барбадос",
+    "embassyId": null
+  },
+  {
+    "code": "BY",
+    "name_en": "Belarus",
+    "name_ka": "ბელარუსი",
+    "name_ru": "Беларусь",
+    "embassyId": null
+  },
+  {
+    "code": "BE",
+    "name_en": "Belgium",
+    "name_ka": "ბელგია",
+    "name_ru": "Бельгия",
+    "embassyId": null
+  },
+  {
+    "code": "BZ",
+    "name_en": "Belize",
+    "name_ka": "ბელიზი",
+    "name_ru": "Белиз",
+    "embassyId": null
+  },
+  {
+    "code": "BJ",
+    "name_en": "Benin",
+    "name_ka": "ბენინი",
+    "name_ru": "Бенин",
+    "embassyId": null
+  },
+  {
+    "code": "BM",
+    "name_en": "Bermuda",
+    "name_ka": "ბერმუდა",
+    "name_ru": "Бермудские о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "BT",
+    "name_en": "Bhutan",
+    "name_ka": "ბუტანი",
+    "name_ru": "Бутан",
+    "embassyId": null
+  },
+  {
+    "code": "BO",
+    "name_en": "Bolivia",
+    "name_ka": "ბოლივია",
+    "name_ru": "Боливия",
+    "embassyId": null
+  },
+  {
+    "code": "BA",
+    "name_en": "Bosnia & Herzegovina",
+    "name_ka": "ბოსნია და ჰერცეგოვინა",
+    "name_ru": "Босния и Герцеговина",
+    "embassyId": null
+  },
+  {
+    "code": "BW",
+    "name_en": "Botswana",
+    "name_ka": "ბოტსვანა",
+    "name_ru": "Ботсвана",
+    "embassyId": null
+  },
+  {
+    "code": "BR",
+    "name_en": "Brazil",
+    "name_ka": "ბრაზილია",
+    "name_ru": "Бразилия",
+    "embassyId": null
+  },
+  {
+    "code": "IO",
+    "name_en": "British Indian Ocean Territory",
+    "name_ka": "ბრიტანეთის ტერიტორია ინდოეთის ოკეანეში",
+    "name_ru": "Британская территория в Индийском океане",
+    "embassyId": null
+  },
+  {
+    "code": "VG",
+    "name_en": "British Virgin Islands",
+    "name_ka": "ბრიტანეთის ვირჯინის კუნძულები",
+    "name_ru": "Виргинские о-ва (Великобритания)",
+    "embassyId": null
+  },
+  {
+    "code": "BN",
+    "name_en": "Brunei",
+    "name_ka": "ბრუნეი",
+    "name_ru": "Бруней",
+    "embassyId": null
+  },
+  {
+    "code": "BG",
+    "name_en": "Bulgaria",
+    "name_ka": "ბულგარეთი",
+    "name_ru": "Болгария",
+    "embassyId": null
+  },
+  {
+    "code": "BF",
+    "name_en": "Burkina Faso",
+    "name_ka": "ბურკინა-ფასო",
+    "name_ru": "Буркина-Фасо",
+    "embassyId": null
+  },
+  {
+    "code": "BI",
+    "name_en": "Burundi",
+    "name_ka": "ბურუნდი",
+    "name_ru": "Бурунди",
+    "embassyId": null
+  },
+  {
+    "code": "KH",
+    "name_en": "Cambodia",
+    "name_ka": "კამბოჯა",
+    "name_ru": "Камбоджа",
+    "embassyId": null
+  },
+  {
+    "code": "CM",
+    "name_en": "Cameroon",
+    "name_ka": "კამერუნი",
+    "name_ru": "Камерун",
+    "embassyId": null
+  },
+  {
+    "code": "CA",
+    "name_en": "Canada",
+    "name_ka": "კანადა",
+    "name_ru": "Канада",
+    "embassyId": null
+  },
+  {
+    "code": "CV",
+    "name_en": "Cape Verde",
+    "name_ka": "კაბო-ვერდე",
+    "name_ru": "Кабо-Верде",
+    "embassyId": null
+  },
+  {
+    "code": "BQ",
+    "name_en": "Caribbean Netherlands",
+    "name_ka": "კარიბის ნიდერლანდები",
+    "name_ru": "Бонэйр, Синт-Эстатиус и Саба",
+    "embassyId": null
+  },
+  {
+    "code": "KY",
+    "name_en": "Cayman Islands",
+    "name_ka": "კაიმანის კუნძულები",
+    "name_ru": "о-ва Кайман",
+    "embassyId": null
+  },
+  {
+    "code": "CF",
+    "name_en": "Central African Republic",
+    "name_ka": "ცენტრალური აფრიკის რესპუბლიკა",
+    "name_ru": "Центрально-Африканская Республика",
+    "embassyId": null
+  },
+  {
+    "code": "TD",
+    "name_en": "Chad",
+    "name_ka": "ჩადი",
+    "name_ru": "Чад",
+    "embassyId": null
+  },
+  {
+    "code": "CL",
+    "name_en": "Chile",
+    "name_ka": "ჩილე",
+    "name_ru": "Чили",
+    "embassyId": null
+  },
+  {
+    "code": "CN",
+    "name_en": "China",
+    "name_ka": "ჩინეთი",
+    "name_ru": "Китай",
+    "embassyId": null
+  },
+  {
+    "code": "CX",
+    "name_en": "Christmas Island",
+    "name_ka": "შობის კუნძული",
+    "name_ru": "о-в Рождества",
+    "embassyId": null
+  },
+  {
+    "code": "CC",
+    "name_en": "Cocos (Keeling) Islands",
+    "name_ka": "ქოქოსის (კილინგის) კუნძულები",
+    "name_ru": "Кокосовые о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "CO",
+    "name_en": "Colombia",
+    "name_ka": "კოლუმბია",
+    "name_ru": "Колумбия",
+    "embassyId": null
+  },
+  {
+    "code": "KM",
+    "name_en": "Comoros",
+    "name_ka": "კომორის კუნძულები",
+    "name_ru": "Коморы",
+    "embassyId": null
+  },
+  {
+    "code": "CG",
+    "name_en": "Congo - Brazzaville",
+    "name_ka": "კონგო - ბრაზავილი",
+    "name_ru": "Конго - Браззавиль",
+    "embassyId": null
+  },
+  {
+    "code": "CD",
+    "name_en": "Congo - Kinshasa",
+    "name_ka": "კონგო - კინშასა",
+    "name_ru": "Конго - Киншаса",
+    "embassyId": null
+  },
+  {
+    "code": "CK",
+    "name_en": "Cook Islands",
+    "name_ka": "კუკის კუნძულები",
+    "name_ru": "о-ва Кука",
+    "embassyId": null
+  },
+  {
+    "code": "CR",
+    "name_en": "Costa Rica",
+    "name_ka": "კოსტა-რიკა",
+    "name_ru": "Коста-Рика",
+    "embassyId": null
+  },
+  {
+    "code": "CI",
+    "name_en": "Côte d’Ivoire",
+    "name_ka": "კოტ-დივუარი",
+    "name_ru": "Кот-д’Ивуар",
+    "embassyId": null
+  },
+  {
+    "code": "HR",
+    "name_en": "Croatia",
+    "name_ka": "ხორვატია",
+    "name_ru": "Хорватия",
+    "embassyId": null
+  },
+  {
+    "code": "CU",
+    "name_en": "Cuba",
+    "name_ka": "კუბა",
+    "name_ru": "Куба",
+    "embassyId": null
+  },
+  {
+    "code": "CW",
+    "name_en": "Curaçao",
+    "name_ka": "კიურასაო",
+    "name_ru": "Кюрасао",
+    "embassyId": null
+  },
+  {
+    "code": "CY",
+    "name_en": "Cyprus",
+    "name_ka": "კვიპროსი",
+    "name_ru": "Кипр",
+    "embassyId": null
+  },
+  {
+    "code": "CZ",
+    "name_en": "Czechia",
+    "name_ka": "ჩეხეთი",
+    "name_ru": "Чехия",
+    "embassyId": null
+  },
+  {
+    "code": "DK",
+    "name_en": "Denmark",
+    "name_ka": "დანია",
+    "name_ru": "Дания",
+    "embassyId": null
+  },
+  {
+    "code": "DJ",
+    "name_en": "Djibouti",
+    "name_ka": "ჯიბუტი",
+    "name_ru": "Джибути",
+    "embassyId": null
+  },
+  {
+    "code": "DM",
+    "name_en": "Dominica",
+    "name_ka": "დომინიკა",
+    "name_ru": "Доминика",
+    "embassyId": null
+  },
+  {
+    "code": "DO",
+    "name_en": "Dominican Republic",
+    "name_ka": "დომინიკელთა რესპუბლიკა",
+    "name_ru": "Доминиканская Республика",
+    "embassyId": null
+  },
+  {
+    "code": "EC",
+    "name_en": "Ecuador",
+    "name_ka": "ეკვადორი",
+    "name_ru": "Эквадор",
+    "embassyId": null
+  },
+  {
+    "code": "EG",
+    "name_en": "Egypt",
+    "name_ka": "ეგვიპტე",
+    "name_ru": "Египет",
+    "embassyId": null
+  },
+  {
+    "code": "SV",
+    "name_en": "El Salvador",
+    "name_ka": "სალვადორი",
+    "name_ru": "Сальвадор",
+    "embassyId": null
+  },
+  {
+    "code": "GQ",
+    "name_en": "Equatorial Guinea",
+    "name_ka": "ეკვატორული გვინეა",
+    "name_ru": "Экваториальная Гвинея",
+    "embassyId": null
+  },
+  {
+    "code": "ER",
+    "name_en": "Eritrea",
+    "name_ka": "ერიტრეა",
+    "name_ru": "Эритрея",
+    "embassyId": null
+  },
+  {
+    "code": "EE",
+    "name_en": "Estonia",
+    "name_ka": "ესტონეთი",
+    "name_ru": "Эстония",
+    "embassyId": null
+  },
+  {
+    "code": "SZ",
+    "name_en": "Eswatini",
+    "name_ka": "სვაზილენდი",
+    "name_ru": "Эсватини",
+    "embassyId": null
+  },
+  {
+    "code": "ET",
+    "name_en": "Ethiopia",
+    "name_ka": "ეთიოპია",
+    "name_ru": "Эфиопия",
+    "embassyId": null
+  },
+  {
+    "code": "FK",
+    "name_en": "Falkland Islands",
+    "name_ka": "ფოლკლენდის კუნძულები",
+    "name_ru": "Фолклендские о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "FO",
+    "name_en": "Faroe Islands",
+    "name_ka": "ფარერის კუნძულები",
+    "name_ru": "Фарерские о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "FJ",
+    "name_en": "Fiji",
+    "name_ka": "ფიჯი",
+    "name_ru": "Фиджи",
+    "embassyId": null
+  },
+  {
+    "code": "FI",
+    "name_en": "Finland",
+    "name_ka": "ფინეთი",
+    "name_ru": "Финляндия",
+    "embassyId": null
+  },
+  {
+    "code": "FR",
+    "name_en": "France",
+    "name_ka": "საფრანგეთი",
+    "name_ru": "Франция",
+    "embassyId": "france"
+  },
+  {
+    "code": "GF",
+    "name_en": "French Guiana",
+    "name_ka": "საფრანგეთის გვიანა",
+    "name_ru": "Французская Гвиана",
+    "embassyId": null
+  },
+  {
+    "code": "PF",
+    "name_en": "French Polynesia",
+    "name_ka": "საფრანგეთის პოლინეზია",
+    "name_ru": "Французская Полинезия",
+    "embassyId": null
+  },
+  {
+    "code": "TF",
+    "name_en": "French Southern Territories",
+    "name_ka": "ფრანგული სამხრეთის ტერიტორიები",
+    "name_ru": "Французские Южные территории",
+    "embassyId": null
+  },
+  {
+    "code": "GA",
+    "name_en": "Gabon",
+    "name_ka": "გაბონი",
+    "name_ru": "Габон",
+    "embassyId": null
+  },
+  {
+    "code": "GM",
+    "name_en": "Gambia",
+    "name_ka": "გამბია",
+    "name_ru": "Гамбия",
+    "embassyId": null
+  },
+  {
+    "code": "GE",
+    "name_en": "Georgia",
+    "name_ka": "საქართველო",
+    "name_ru": "Грузия",
+    "embassyId": null
+  },
+  {
+    "code": "DE",
+    "name_en": "Germany",
+    "name_ka": "გერმანია",
+    "name_ru": "Германия",
+    "embassyId": "germany"
+  },
+  {
+    "code": "GH",
+    "name_en": "Ghana",
+    "name_ka": "განა",
+    "name_ru": "Гана",
+    "embassyId": null
+  },
+  {
+    "code": "GI",
+    "name_en": "Gibraltar",
+    "name_ka": "გიბრალტარი",
+    "name_ru": "Гибралтар",
+    "embassyId": null
+  },
+  {
+    "code": "GR",
+    "name_en": "Greece",
+    "name_ka": "საბერძნეთი",
+    "name_ru": "Греция",
+    "embassyId": null
+  },
+  {
+    "code": "GL",
+    "name_en": "Greenland",
+    "name_ka": "გრენლანდია",
+    "name_ru": "Гренландия",
+    "embassyId": null
+  },
+  {
+    "code": "GD",
+    "name_en": "Grenada",
+    "name_ka": "გრენადა",
+    "name_ru": "Гренада",
+    "embassyId": null
+  },
+  {
+    "code": "GP",
+    "name_en": "Guadeloupe",
+    "name_ka": "გვადელუპა",
+    "name_ru": "Гваделупа",
+    "embassyId": null
+  },
+  {
+    "code": "GU",
+    "name_en": "Guam",
+    "name_ka": "გუამი",
+    "name_ru": "Гуам",
+    "embassyId": null
+  },
+  {
+    "code": "GT",
+    "name_en": "Guatemala",
+    "name_ka": "გვატემალა",
+    "name_ru": "Гватемала",
+    "embassyId": null
+  },
+  {
+    "code": "GG",
+    "name_en": "Guernsey",
+    "name_ka": "გერნსი",
+    "name_ru": "Гернси",
+    "embassyId": null
+  },
+  {
+    "code": "GN",
+    "name_en": "Guinea",
+    "name_ka": "გვინეა",
+    "name_ru": "Гвинея",
+    "embassyId": null
+  },
+  {
+    "code": "GW",
+    "name_en": "Guinea-Bissau",
+    "name_ka": "გვინეა-ბისაუ",
+    "name_ru": "Гвинея-Бисау",
+    "embassyId": null
+  },
+  {
+    "code": "GY",
+    "name_en": "Guyana",
+    "name_ka": "გაიანა",
+    "name_ru": "Гайана",
+    "embassyId": null
+  },
+  {
+    "code": "HT",
+    "name_en": "Haiti",
+    "name_ka": "ჰაიტი",
+    "name_ru": "Гаити",
+    "embassyId": null
+  },
+  {
+    "code": "HN",
+    "name_en": "Honduras",
+    "name_ka": "ჰონდურასი",
+    "name_ru": "Гондурас",
+    "embassyId": null
+  },
+  {
+    "code": "HK",
+    "name_en": "Hong Kong SAR China",
+    "name_ka": "ჰონკონგის სპეციალური ადმინისტრაციული რეგიონი, ჩინეთი",
+    "name_ru": "Гонконг (САР)",
+    "embassyId": null
+  },
+  {
+    "code": "HU",
+    "name_en": "Hungary",
+    "name_ka": "უნგრეთი",
+    "name_ru": "Венгрия",
+    "embassyId": null
+  },
+  {
+    "code": "IS",
+    "name_en": "Iceland",
+    "name_ka": "ისლანდია",
+    "name_ru": "Исландия",
+    "embassyId": null
+  },
+  {
+    "code": "IN",
+    "name_en": "India",
+    "name_ka": "ინდოეთი",
+    "name_ru": "Индия",
+    "embassyId": null
+  },
+  {
+    "code": "ID",
+    "name_en": "Indonesia",
+    "name_ka": "ინდონეზია",
+    "name_ru": "Индонезия",
+    "embassyId": null
+  },
+  {
+    "code": "IR",
+    "name_en": "Iran",
+    "name_ka": "ირანი",
+    "name_ru": "Иран",
+    "embassyId": null
+  },
+  {
+    "code": "IQ",
+    "name_en": "Iraq",
+    "name_ka": "ერაყი",
+    "name_ru": "Ирак",
+    "embassyId": null
+  },
+  {
+    "code": "IE",
+    "name_en": "Ireland",
+    "name_ka": "ირლანდია",
+    "name_ru": "Ирландия",
+    "embassyId": null
+  },
+  {
+    "code": "IM",
+    "name_en": "Isle of Man",
+    "name_ka": "მენის კუნძული",
+    "name_ru": "о-в Мэн",
+    "embassyId": null
+  },
+  {
+    "code": "IL",
+    "name_en": "Israel",
+    "name_ka": "ისრაელი",
+    "name_ru": "Израиль",
+    "embassyId": "israel"
+  },
+  {
+    "code": "IT",
+    "name_en": "Italy",
+    "name_ka": "იტალია",
+    "name_ru": "Италия",
+    "embassyId": null
+  },
+  {
+    "code": "JM",
+    "name_en": "Jamaica",
+    "name_ka": "იამაიკა",
+    "name_ru": "Ямайка",
+    "embassyId": null
+  },
+  {
+    "code": "JP",
+    "name_en": "Japan",
+    "name_ka": "იაპონია",
+    "name_ru": "Япония",
+    "embassyId": null
+  },
+  {
+    "code": "JE",
+    "name_en": "Jersey",
+    "name_ka": "ჯერსი",
+    "name_ru": "Джерси",
+    "embassyId": null
+  },
+  {
+    "code": "JO",
+    "name_en": "Jordan",
+    "name_ka": "იორდანია",
+    "name_ru": "Иордания",
+    "embassyId": null
+  },
+  {
+    "code": "KZ",
+    "name_en": "Kazakhstan",
+    "name_ka": "ყაზახეთი",
+    "name_ru": "Казахстан",
+    "embassyId": null
+  },
+  {
+    "code": "KE",
+    "name_en": "Kenya",
+    "name_ka": "კენია",
+    "name_ru": "Кения",
+    "embassyId": null
+  },
+  {
+    "code": "KI",
+    "name_en": "Kiribati",
+    "name_ka": "კირიბატი",
+    "name_ru": "Кирибати",
+    "embassyId": null
+  },
+  {
+    "code": "XK",
+    "name_en": "Kosovo",
+    "name_ka": "კოსოვო",
+    "name_ru": "Косово",
+    "embassyId": null
+  },
+  {
+    "code": "KW",
+    "name_en": "Kuwait",
+    "name_ka": "ქუვეითი",
+    "name_ru": "Кувейт",
+    "embassyId": null
+  },
+  {
+    "code": "KG",
+    "name_en": "Kyrgyzstan",
+    "name_ka": "ყირგიზეთი",
+    "name_ru": "Киргизия",
+    "embassyId": null
+  },
+  {
+    "code": "LA",
+    "name_en": "Laos",
+    "name_ka": "ლაოსი",
+    "name_ru": "Лаос",
+    "embassyId": null
+  },
+  {
+    "code": "LV",
+    "name_en": "Latvia",
+    "name_ka": "ლატვია",
+    "name_ru": "Латвия",
+    "embassyId": null
+  },
+  {
+    "code": "LB",
+    "name_en": "Lebanon",
+    "name_ka": "ლიბანი",
+    "name_ru": "Ливан",
+    "embassyId": null
+  },
+  {
+    "code": "LS",
+    "name_en": "Lesotho",
+    "name_ka": "ლესოთო",
+    "name_ru": "Лесото",
+    "embassyId": null
+  },
+  {
+    "code": "LR",
+    "name_en": "Liberia",
+    "name_ka": "ლიბერია",
+    "name_ru": "Либерия",
+    "embassyId": null
+  },
+  {
+    "code": "LY",
+    "name_en": "Libya",
+    "name_ka": "ლიბია",
+    "name_ru": "Ливия",
+    "embassyId": null
+  },
+  {
+    "code": "LI",
+    "name_en": "Liechtenstein",
+    "name_ka": "ლიხტენშტაინი",
+    "name_ru": "Лихтенштейн",
+    "embassyId": null
+  },
+  {
+    "code": "LT",
+    "name_en": "Lithuania",
+    "name_ka": "ლიეტუვა",
+    "name_ru": "Литва",
+    "embassyId": null
+  },
+  {
+    "code": "LU",
+    "name_en": "Luxembourg",
+    "name_ka": "ლუქსემბურგი",
+    "name_ru": "Люксембург",
+    "embassyId": null
+  },
+  {
+    "code": "MO",
+    "name_en": "Macao SAR China",
+    "name_ka": "მაკაოს სპეციალური ადმინისტრაციული რეგიონი, ჩინეთი",
+    "name_ru": "Макао (САР)",
+    "embassyId": null
+  },
+  {
+    "code": "MG",
+    "name_en": "Madagascar",
+    "name_ka": "მადაგასკარი",
+    "name_ru": "Мадагаскар",
+    "embassyId": null
+  },
+  {
+    "code": "MW",
+    "name_en": "Malawi",
+    "name_ka": "მალავი",
+    "name_ru": "Малави",
+    "embassyId": null
+  },
+  {
+    "code": "MY",
+    "name_en": "Malaysia",
+    "name_ka": "მალაიზია",
+    "name_ru": "Малайзия",
+    "embassyId": null
+  },
+  {
+    "code": "MV",
+    "name_en": "Maldives",
+    "name_ka": "მალდივები",
+    "name_ru": "Мальдивы",
+    "embassyId": null
+  },
+  {
+    "code": "ML",
+    "name_en": "Mali",
+    "name_ka": "მალი",
+    "name_ru": "Мали",
+    "embassyId": null
+  },
+  {
+    "code": "MT",
+    "name_en": "Malta",
+    "name_ka": "მალტა",
+    "name_ru": "Мальта",
+    "embassyId": null
+  },
+  {
+    "code": "MH",
+    "name_en": "Marshall Islands",
+    "name_ka": "მარშალის კუნძულები",
+    "name_ru": "Маршалловы о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "MQ",
+    "name_en": "Martinique",
+    "name_ka": "მარტინიკა",
+    "name_ru": "Мартиника",
+    "embassyId": null
+  },
+  {
+    "code": "MR",
+    "name_en": "Mauritania",
+    "name_ka": "მავრიტანია",
+    "name_ru": "Мавритания",
+    "embassyId": null
+  },
+  {
+    "code": "MU",
+    "name_en": "Mauritius",
+    "name_ka": "მავრიკი",
+    "name_ru": "Маврикий",
+    "embassyId": null
+  },
+  {
+    "code": "YT",
+    "name_en": "Mayotte",
+    "name_ka": "მაიოტა",
+    "name_ru": "Майотта",
+    "embassyId": null
+  },
+  {
+    "code": "MX",
+    "name_en": "Mexico",
+    "name_ka": "მექსიკა",
+    "name_ru": "Мексика",
+    "embassyId": null
+  },
+  {
+    "code": "FM",
+    "name_en": "Micronesia",
+    "name_ka": "მიკრონეზია",
+    "name_ru": "Федеративные Штаты Микронезии",
+    "embassyId": null
+  },
+  {
+    "code": "MD",
+    "name_en": "Moldova",
+    "name_ka": "მოლდოვა",
+    "name_ru": "Молдова",
+    "embassyId": null
+  },
+  {
+    "code": "MC",
+    "name_en": "Monaco",
+    "name_ka": "მონაკო",
+    "name_ru": "Монако",
+    "embassyId": null
+  },
+  {
+    "code": "MN",
+    "name_en": "Mongolia",
+    "name_ka": "მონღოლეთი",
+    "name_ru": "Монголия",
+    "embassyId": null
+  },
+  {
+    "code": "ME",
+    "name_en": "Montenegro",
+    "name_ka": "მონტენეგრო",
+    "name_ru": "Черногория",
+    "embassyId": null
+  },
+  {
+    "code": "MS",
+    "name_en": "Montserrat",
+    "name_ka": "მონსერატი",
+    "name_ru": "Монтсеррат",
+    "embassyId": null
+  },
+  {
+    "code": "MA",
+    "name_en": "Morocco",
+    "name_ka": "მაროკო",
+    "name_ru": "Марокко",
+    "embassyId": null
+  },
+  {
+    "code": "MZ",
+    "name_en": "Mozambique",
+    "name_ka": "მოზამბიკი",
+    "name_ru": "Мозамбик",
+    "embassyId": null
+  },
+  {
+    "code": "MM",
+    "name_en": "Myanmar (Burma)",
+    "name_ka": "მიანმარი (ბირმა)",
+    "name_ru": "Мьянма (Бирма)",
+    "embassyId": null
+  },
+  {
+    "code": "NA",
+    "name_en": "Namibia",
+    "name_ka": "ნამიბია",
+    "name_ru": "Намибия",
+    "embassyId": null
+  },
+  {
+    "code": "NR",
+    "name_en": "Nauru",
+    "name_ka": "ნაურუ",
+    "name_ru": "Науру",
+    "embassyId": null
+  },
+  {
+    "code": "NP",
+    "name_en": "Nepal",
+    "name_ka": "ნეპალი",
+    "name_ru": "Непал",
+    "embassyId": null
+  },
+  {
+    "code": "NL",
+    "name_en": "Netherlands",
+    "name_ka": "ნიდერლანდები",
+    "name_ru": "Нидерланды",
+    "embassyId": null
+  },
+  {
+    "code": "NC",
+    "name_en": "New Caledonia",
+    "name_ka": "ახალი კალედონია",
+    "name_ru": "Новая Каледония",
+    "embassyId": null
+  },
+  {
+    "code": "NZ",
+    "name_en": "New Zealand",
+    "name_ka": "ახალი ზელანდია",
+    "name_ru": "Новая Зеландия",
+    "embassyId": null
+  },
+  {
+    "code": "NI",
+    "name_en": "Nicaragua",
+    "name_ka": "ნიკარაგუა",
+    "name_ru": "Никарагуа",
+    "embassyId": null
+  },
+  {
+    "code": "NE",
+    "name_en": "Niger",
+    "name_ka": "ნიგერი",
+    "name_ru": "Нигер",
+    "embassyId": null
+  },
+  {
+    "code": "NG",
+    "name_en": "Nigeria",
+    "name_ka": "ნიგერია",
+    "name_ru": "Нигерия",
+    "embassyId": null
+  },
+  {
+    "code": "NU",
+    "name_en": "Niue",
+    "name_ka": "ნიუე",
+    "name_ru": "Ниуэ",
+    "embassyId": null
+  },
+  {
+    "code": "NF",
+    "name_en": "Norfolk Island",
+    "name_ka": "ნორფოლკის კუნძული",
+    "name_ru": "о-в Норфолк",
+    "embassyId": null
+  },
+  {
+    "code": "KP",
+    "name_en": "North Korea",
+    "name_ka": "ჩრდილოეთ კორეა",
+    "name_ru": "КНДР",
+    "embassyId": null
+  },
+  {
+    "code": "MK",
+    "name_en": "North Macedonia",
+    "name_ka": "ჩრდილოეთ მაკედონია",
+    "name_ru": "Северная Македония",
+    "embassyId": null
+  },
+  {
+    "code": "MP",
+    "name_en": "Northern Mariana Islands",
+    "name_ka": "ჩრდილოეთ მარიანას კუნძულები",
+    "name_ru": "Северные Марианские о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "NO",
+    "name_en": "Norway",
+    "name_ka": "ნორვეგია",
+    "name_ru": "Норвегия",
+    "embassyId": null
+  },
+  {
+    "code": "OM",
+    "name_en": "Oman",
+    "name_ka": "ომანი",
+    "name_ru": "Оман",
+    "embassyId": null
+  },
+  {
+    "code": "PK",
+    "name_en": "Pakistan",
+    "name_ka": "პაკისტანი",
+    "name_ru": "Пакистан",
+    "embassyId": null
+  },
+  {
+    "code": "PW",
+    "name_en": "Palau",
+    "name_ka": "პალაუ",
+    "name_ru": "Палау",
+    "embassyId": null
+  },
+  {
+    "code": "PS",
+    "name_en": "Palestinian Territories",
+    "name_ka": "პალესტინის ტერიტორიები",
+    "name_ru": "Палестинские территории",
+    "embassyId": null
+  },
+  {
+    "code": "PA",
+    "name_en": "Panama",
+    "name_ka": "პანამა",
+    "name_ru": "Панама",
+    "embassyId": null
+  },
+  {
+    "code": "PG",
+    "name_en": "Papua New Guinea",
+    "name_ka": "პაპუა-ახალი გვინეა",
+    "name_ru": "Папуа — Новая Гвинея",
+    "embassyId": null
+  },
+  {
+    "code": "PY",
+    "name_en": "Paraguay",
+    "name_ka": "პარაგვაი",
+    "name_ru": "Парагвай",
+    "embassyId": null
+  },
+  {
+    "code": "PE",
+    "name_en": "Peru",
+    "name_ka": "პერუ",
+    "name_ru": "Перу",
+    "embassyId": null
+  },
+  {
+    "code": "PH",
+    "name_en": "Philippines",
+    "name_ka": "ფილიპინები",
+    "name_ru": "Филиппины",
+    "embassyId": null
+  },
+  {
+    "code": "PN",
+    "name_en": "Pitcairn Islands",
+    "name_ka": "პიტკერნის კუნძულები",
+    "name_ru": "о-ва Питкэрн",
+    "embassyId": null
+  },
+  {
+    "code": "PL",
+    "name_en": "Poland",
+    "name_ka": "პოლონეთი",
+    "name_ru": "Польша",
+    "embassyId": "poland"
+  },
+  {
+    "code": "PT",
+    "name_en": "Portugal",
+    "name_ka": "პორტუგალია",
+    "name_ru": "Португалия",
+    "embassyId": null
+  },
+  {
+    "code": "PR",
+    "name_en": "Puerto Rico",
+    "name_ka": "პუერტო-რიკო",
+    "name_ru": "Пуэрто-Рико",
+    "embassyId": null
+  },
+  {
+    "code": "QA",
+    "name_en": "Qatar",
+    "name_ka": "კატარი",
+    "name_ru": "Катар",
+    "embassyId": null
+  },
+  {
+    "code": "RE",
+    "name_en": "Réunion",
+    "name_ka": "რეუნიონი",
+    "name_ru": "Реюньон",
+    "embassyId": null
+  },
+  {
+    "code": "RO",
+    "name_en": "Romania",
+    "name_ka": "რუმინეთი",
+    "name_ru": "Румыния",
+    "embassyId": null
+  },
+  {
+    "code": "RU",
+    "name_en": "Russia",
+    "name_ka": "რუსეთი",
+    "name_ru": "Россия",
+    "embassyId": null
+  },
+  {
+    "code": "RW",
+    "name_en": "Rwanda",
+    "name_ka": "რუანდა",
+    "name_ru": "Руанда",
+    "embassyId": null
+  },
+  {
+    "code": "WS",
+    "name_en": "Samoa",
+    "name_ka": "სამოა",
+    "name_ru": "Самоа",
+    "embassyId": null
+  },
+  {
+    "code": "SM",
+    "name_en": "San Marino",
+    "name_ka": "სან-მარინო",
+    "name_ru": "Сан-Марино",
+    "embassyId": null
+  },
+  {
+    "code": "ST",
+    "name_en": "São Tomé & Príncipe",
+    "name_ka": "სან-ტომე და პრინსიპი",
+    "name_ru": "Сан-Томе и Принсипи",
+    "embassyId": null
+  },
+  {
+    "code": "CQ",
+    "name_en": "Sark",
+    "name_ka": "სარკი",
+    "name_ru": "Сарк",
+    "embassyId": null
+  },
+  {
+    "code": "SA",
+    "name_en": "Saudi Arabia",
+    "name_ka": "საუდის არაბეთი",
+    "name_ru": "Саудовская Аравия",
+    "embassyId": null
+  },
+  {
+    "code": "SN",
+    "name_en": "Senegal",
+    "name_ka": "სენეგალი",
+    "name_ru": "Сенегал",
+    "embassyId": null
+  },
+  {
+    "code": "RS",
+    "name_en": "Serbia",
+    "name_ka": "სერბეთი",
+    "name_ru": "Сербия",
+    "embassyId": null
+  },
+  {
+    "code": "SC",
+    "name_en": "Seychelles",
+    "name_ka": "სეიშელის კუნძულები",
+    "name_ru": "Сейшельские о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "SL",
+    "name_en": "Sierra Leone",
+    "name_ka": "სიერა-ლეონე",
+    "name_ru": "Сьерра-Леоне",
+    "embassyId": null
+  },
+  {
+    "code": "SG",
+    "name_en": "Singapore",
+    "name_ka": "სინგაპური",
+    "name_ru": "Сингапур",
+    "embassyId": null
+  },
+  {
+    "code": "SX",
+    "name_en": "Sint Maarten",
+    "name_ka": "სინტ-მარტენი",
+    "name_ru": "Синт-Мартен",
+    "embassyId": null
+  },
+  {
+    "code": "SK",
+    "name_en": "Slovakia",
+    "name_ka": "სლოვაკეთი",
+    "name_ru": "Словакия",
+    "embassyId": null
+  },
+  {
+    "code": "SI",
+    "name_en": "Slovenia",
+    "name_ka": "სლოვენია",
+    "name_ru": "Словения",
+    "embassyId": null
+  },
+  {
+    "code": "SB",
+    "name_en": "Solomon Islands",
+    "name_ka": "სოლომონის კუნძულები",
+    "name_ru": "Соломоновы о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "SO",
+    "name_en": "Somalia",
+    "name_ka": "სომალი",
+    "name_ru": "Сомали",
+    "embassyId": null
+  },
+  {
+    "code": "ZA",
+    "name_en": "South Africa",
+    "name_ka": "სამხრეთ აფრიკის რესპუბლიკა",
+    "name_ru": "Южно-Африканская Республика",
+    "embassyId": null
+  },
+  {
+    "code": "GS",
+    "name_en": "South Georgia & South Sandwich Islands",
+    "name_ka": "სამხრეთ ჯორჯია და სამხრეთ სენდვიჩის კუნძულები",
+    "name_ru": "Южная Георгия и Южные Сандвичевы о-ва",
+    "embassyId": null
+  },
+  {
+    "code": "KR",
+    "name_en": "South Korea",
+    "name_ka": "სამხრეთ კორეა",
+    "name_ru": "Республика Корея",
+    "embassyId": null
+  },
+  {
+    "code": "SS",
+    "name_en": "South Sudan",
+    "name_ka": "სამხრეთ სუდანი",
+    "name_ru": "Южный Судан",
+    "embassyId": null
+  },
+  {
+    "code": "ES",
+    "name_en": "Spain",
+    "name_ka": "ესპანეთი",
+    "name_ru": "Испания",
+    "embassyId": null
+  },
+  {
+    "code": "LK",
+    "name_en": "Sri Lanka",
+    "name_ka": "შრი-ლანკა",
+    "name_ru": "Шри-Ланка",
+    "embassyId": null
+  },
+  {
+    "code": "BL",
+    "name_en": "St. Barthélemy",
+    "name_ka": "სენ-ბართელმი",
+    "name_ru": "Сен-Бартелеми",
+    "embassyId": null
+  },
+  {
+    "code": "SH",
+    "name_en": "St. Helena",
+    "name_ka": "წმინდა ელენეს კუნძული",
+    "name_ru": "о-в Св. Елены",
+    "embassyId": null
+  },
+  {
+    "code": "KN",
+    "name_en": "St. Kitts & Nevis",
+    "name_ka": "სენტ-კიტსი და ნევისი",
+    "name_ru": "Сент-Китс и Невис",
+    "embassyId": null
+  },
+  {
+    "code": "LC",
+    "name_en": "St. Lucia",
+    "name_ka": "სენტ-ლუსია",
+    "name_ru": "Сент-Люсия",
+    "embassyId": null
+  },
+  {
+    "code": "MF",
+    "name_en": "St. Martin",
+    "name_ka": "სენ-მარტენი",
+    "name_ru": "Сен-Мартен",
+    "embassyId": null
+  },
+  {
+    "code": "PM",
+    "name_en": "St. Pierre & Miquelon",
+    "name_ka": "სენ-პიერი და მიკელონი",
+    "name_ru": "Сен-Пьер и Микелон",
+    "embassyId": null
+  },
+  {
+    "code": "VC",
+    "name_en": "St. Vincent & Grenadines",
+    "name_ka": "სენტ-ვინსენტი და გრენადინები",
+    "name_ru": "Сент-Винсент и Гренадины",
+    "embassyId": null
+  },
+  {
+    "code": "SD",
+    "name_en": "Sudan",
+    "name_ka": "სუდანი",
+    "name_ru": "Судан",
+    "embassyId": null
+  },
+  {
+    "code": "SR",
+    "name_en": "Suriname",
+    "name_ka": "სურინამი",
+    "name_ru": "Суринам",
+    "embassyId": null
+  },
+  {
+    "code": "SJ",
+    "name_en": "Svalbard & Jan Mayen",
+    "name_ka": "შპიცბერგენი და იან-მაიენი",
+    "name_ru": "Шпицберген и Ян-Майен",
+    "embassyId": null
+  },
+  {
+    "code": "SE",
+    "name_en": "Sweden",
+    "name_ka": "შვედეთი",
+    "name_ru": "Швеция",
+    "embassyId": null
+  },
+  {
+    "code": "CH",
+    "name_en": "Switzerland",
+    "name_ka": "შვეიცარია",
+    "name_ru": "Швейцария",
+    "embassyId": null
+  },
+  {
+    "code": "SY",
+    "name_en": "Syria",
+    "name_ka": "სირია",
+    "name_ru": "Сирия",
+    "embassyId": null
+  },
+  {
+    "code": "TW",
+    "name_en": "Taiwan",
+    "name_ka": "ტაივანი",
+    "name_ru": "Тайвань",
+    "embassyId": null
+  },
+  {
+    "code": "TJ",
+    "name_en": "Tajikistan",
+    "name_ka": "ტაჯიკეთი",
+    "name_ru": "Таджикистан",
+    "embassyId": null
+  },
+  {
+    "code": "TZ",
+    "name_en": "Tanzania",
+    "name_ka": "ტანზანია",
+    "name_ru": "Танзания",
+    "embassyId": null
+  },
+  {
+    "code": "TH",
+    "name_en": "Thailand",
+    "name_ka": "ტაილანდი",
+    "name_ru": "Таиланд",
+    "embassyId": null
+  },
+  {
+    "code": "TL",
+    "name_en": "Timor-Leste",
+    "name_ka": "ტიმორ-ლესტე",
+    "name_ru": "Восточный Тимор",
+    "embassyId": null
+  },
+  {
+    "code": "TG",
+    "name_en": "Togo",
+    "name_ka": "ტოგო",
+    "name_ru": "Того",
+    "embassyId": null
+  },
+  {
+    "code": "TK",
+    "name_en": "Tokelau",
+    "name_ka": "ტოკელაუ",
+    "name_ru": "Токелау",
+    "embassyId": null
+  },
+  {
+    "code": "TO",
+    "name_en": "Tonga",
+    "name_ka": "ტონგა",
+    "name_ru": "Тонга",
+    "embassyId": null
+  },
+  {
+    "code": "TT",
+    "name_en": "Trinidad & Tobago",
+    "name_ka": "ტრინიდადი და ტობაგო",
+    "name_ru": "Тринидад и Тобаго",
+    "embassyId": null
+  },
+  {
+    "code": "TA",
+    "name_en": "Tristan da Cunha",
+    "name_ka": "ტრისტან-და-კუნია",
+    "name_ru": "Тристан-да-Кунья",
+    "embassyId": null
+  },
+  {
+    "code": "TN",
+    "name_en": "Tunisia",
+    "name_ka": "ტუნისი",
+    "name_ru": "Тунис",
+    "embassyId": null
+  },
+  {
+    "code": "TR",
+    "name_en": "Türkiye",
+    "name_ka": "თურქეთი",
+    "name_ru": "Турция",
+    "embassyId": "turkey"
+  },
+  {
+    "code": "TM",
+    "name_en": "Turkmenistan",
+    "name_ka": "თურქმენეთი",
+    "name_ru": "Туркменистан",
+    "embassyId": null
+  },
+  {
+    "code": "TC",
+    "name_en": "Turks & Caicos Islands",
+    "name_ka": "თერქს-ქაიქოსის კუნძულები",
+    "name_ru": "Тёркс и Кайкос",
+    "embassyId": null
+  },
+  {
+    "code": "TV",
+    "name_en": "Tuvalu",
+    "name_ka": "ტუვალუ",
+    "name_ru": "Тувалу",
+    "embassyId": null
+  },
+  {
+    "code": "VI",
+    "name_en": "U.S. Virgin Islands",
+    "name_ka": "აშშ-ის ვირჯინის კუნძულები",
+    "name_ru": "Виргинские о-ва (США)",
+    "embassyId": null
+  },
+  {
+    "code": "UG",
+    "name_en": "Uganda",
+    "name_ka": "უგანდა",
+    "name_ru": "Уганда",
+    "embassyId": null
+  },
+  {
+    "code": "UA",
+    "name_en": "Ukraine",
+    "name_ka": "უკრაინა",
+    "name_ru": "Украина",
+    "embassyId": "ukraine"
+  },
+  {
+    "code": "AE",
+    "name_en": "United Arab Emirates",
+    "name_ka": "არაბთა გაერთიანებული საამიროები",
+    "name_ru": "ОАЭ",
+    "embassyId": null
+  },
+  {
+    "code": "GB",
+    "name_en": "United Kingdom",
+    "name_ka": "გაერთიანებული სამეფო",
+    "name_ru": "Великобритания",
+    "embassyId": "uk"
+  },
+  {
+    "code": "US",
+    "name_en": "United States",
+    "name_ka": "ამერიკის შეერთებული შტატები",
+    "name_ru": "Соединенные Штаты",
+    "embassyId": "usa"
+  },
+  {
+    "code": "UY",
+    "name_en": "Uruguay",
+    "name_ka": "ურუგვაი",
+    "name_ru": "Уругвай",
+    "embassyId": null
+  },
+  {
+    "code": "UZ",
+    "name_en": "Uzbekistan",
+    "name_ka": "უზბეკეთი",
+    "name_ru": "Узбекистан",
+    "embassyId": null
+  },
+  {
+    "code": "VU",
+    "name_en": "Vanuatu",
+    "name_ka": "ვანუატუ",
+    "name_ru": "Вануату",
+    "embassyId": null
+  },
+  {
+    "code": "VA",
+    "name_en": "Vatican City",
+    "name_ka": "ქალაქი ვატიკანი",
+    "name_ru": "Ватикан",
+    "embassyId": null
+  },
+  {
+    "code": "VE",
+    "name_en": "Venezuela",
+    "name_ka": "ვენესუელა",
+    "name_ru": "Венесуэла",
+    "embassyId": null
+  },
+  {
+    "code": "VN",
+    "name_en": "Vietnam",
+    "name_ka": "ვიეტნამი",
+    "name_ru": "Вьетнам",
+    "embassyId": null
+  },
+  {
+    "code": "WF",
+    "name_en": "Wallis & Futuna",
+    "name_ka": "უოლისი და ფუტუნა",
+    "name_ru": "Уоллис и Футуна",
+    "embassyId": null
+  },
+  {
+    "code": "EH",
+    "name_en": "Western Sahara",
+    "name_ka": "დასავლეთ საჰარა",
+    "name_ru": "Западная Сахара",
+    "embassyId": null
+  },
+  {
+    "code": "YE",
+    "name_en": "Yemen",
+    "name_ka": "იემენი",
+    "name_ru": "Йемен",
+    "embassyId": null
+  },
+  {
+    "code": "ZM",
+    "name_en": "Zambia",
+    "name_ka": "ზამბია",
+    "name_ru": "Замбия",
+    "embassyId": null
+  },
+  {
+    "code": "ZW",
+    "name_en": "Zimbabwe",
+    "name_ka": "ზიმბაბვე",
+    "name_ru": "Зимбабве",
+    "embassyId": null
+  }
+]

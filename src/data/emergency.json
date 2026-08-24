@@ -81,6 +81,94 @@
       "notes_en": "Emergency and surgical care center.",
       "notes_ka": "გადაუდებელი და ქირურგიული დახმარების ცენტრი.",
       "notes_ru": "Центр неотложной и хирургической помощи."
+    },
+    {
+      "id": "caucasus_medical_centre",
+      "name_en": "Caucasus Medical Centre (CMC)",
+      "address": "23 Petre Kavtaradze St, Saburtalo, Tbilisi",
+      "phone": "+995 32 260 06 00",
+      "lat": 41.7221,
+      "lng": 44.7315,
+      "notes_en": "Multi-profile hospital, 24/7 emergency service, English-speaking staff, works with international insurers.",
+      "notes_ka": "მრავალპროფილური საავადმყოფო, 24/7 გადაუდებელი დახმარება, ინგლისურენოვანი პერსონალი, თანამშრომლობს საერთაშორისო სადაზღვევო კომპანიებთან.",
+      "notes_ru": "Многопрофильная больница, круглосуточная неотложная помощь, англоговорящий персонал, работает с международными страховщиками."
+    },
+    {
+      "id": "new_hospitals",
+      "name_en": "New Hospitals",
+      "address": "12 Krtsanisi St, Krtsanisi, Tbilisi",
+      "phone": "+995 32 219 01 90",
+      "lat": 41.675,
+      "lng": 44.8245,
+      "notes_en": "Multi-profile hospital with an emergency department, south of the Old Town.",
+      "notes_ka": "მრავალპროფილური საავადმყოფო გადაუდებელი დახმარების განყოფილებით, ძველი თბილისის სამხრეთით.",
+      "notes_ru": "Многопрофильная больница с отделением неотложной помощи, к югу от Старого города."
+    },
+    {
+      "id": "american_hospital_tbilisi",
+      "name_en": "American Hospital Tbilisi (not the same as AMC Vake)",
+      "address": "17 Ushangi Chkheidze St, Tbilisi 0102",
+      "phone": "+995 32 200 90 09",
+      "lat": 41.7098,
+      "lng": 44.7927,
+      "notes_en": "Multi-profile hospital with a 24/7 emergency department and English-speaking staff. A separate hospital from American Medical Centers (AMC) in Vake.",
+      "notes_ka": "მრავალპროფილური საავადმყოფო 24/7 გადაუდებელი დახმარების განყოფილებითა და ინგლისურენოვანი პერსონალით. ვაკეში მდებარე American Medical Centers-ისგან (AMC) განსხვავებული დაწესებულებაა.",
+      "notes_ru": "Многопрофильная больница с круглосуточным отделением неотложной помощи и англоговорящим персоналом. Это не то же самое, что American Medical Centers (AMC) в Ваке."
+    },
+    {
+      "id": "bokeria_hospital",
+      "name_en": "Iv. Bokeria University Hospital",
+      "address": "8 Zurab Iarajuli St, Samgori, Tbilisi 0137",
+      "phone": "+995 32 280 16 00",
+      "lat": 41.6678,
+      "lng": 44.8888,
+      "notes_en": "Multi-profile hospital with an emergency department, serving the eastern Samgori district.",
+      "notes_ka": "მრავალპროფილური საავადმყოფო გადაუდებელი დახმარების განყოფილებით, ემსახურება აღმოსავლეთით სამგორის რაიონს.",
+      "notes_ru": "Многопрофильная больница с отделением неотложной помощи, обслуживает восточный район Самгори."
+    },
+    {
+      "id": "tbilisi_central_hospital",
+      "name_en": "Tbilisi Central Hospital",
+      "address": "1 Konstantine Chachava St, Tbilisi 0159",
+      "phone": "+995 32 210 44 44",
+      "lat": 41.7751,
+      "lng": 44.7765,
+      "notes_en": "Multi-profile hospital with a 24/7 emergency department and acute surgery.",
+      "notes_ka": "მრავალპროფილური საავადმყოფო 24/7 გადაუდებელი დახმარების განყოფილებითა და გადაუდებელი ქირურგიით.",
+      "notes_ru": "Многопрофильная больница с круглосуточным отделением неотложной помощи и экстренной хирургией."
+    },
+    {
+      "id": "khechinashvili_clinic",
+      "name_en": "S. Khechinashvili University Clinic",
+      "address": "33 Ilia Chavchavadze Ave, Tbilisi 0179",
+      "phone": "+995 32 221 44 00",
+      "lat": 41.7116,
+      "lng": 44.762,
+      "notes_en": "University hospital with an emergency department and a wide range of surgical care.",
+      "notes_ka": "საუნივერსიტეტო საავადმყოფო გადაუდებელი დახმარების განყოფილებითა და ფართო ქირურგიული მომსახურებით.",
+      "notes_ru": "Университетская больница с отделением неотложной помощи и широким спектром хирургической помощи."
+    },
+    {
+      "id": "tsmu_first_clinic",
+      "name_en": "TSMU First University Clinic",
+      "address": "4 Gudamakari St, Gldani-Nadzaladevi, Tbilisi",
+      "phone": "+995 32 261 01 01",
+      "lat": 41.7693,
+      "lng": 44.7966,
+      "notes_en": "State university hospital with an emergency medicine department, in the north of the city.",
+      "notes_ka": "სახელმწიფო საუნივერსიტეტო საავადმყოფო გადაუდებელი მედიცინის განყოფილებით, ქალაქის ჩრდილოეთით.",
+      "notes_ru": "Государственная университетская больница с отделением экстренной медицины, на севере города."
+    },
+    {
+      "id": "mediclub_georgia",
+      "name_en": "MediClubGeorgia",
+      "address": "22a Tashkenti St, Tbilisi 0160",
+      "phone": "+995 32 225 19 91",
+      "lat": 41.7284,
+      "lng": 44.7633,
+      "notes_en": "International medical centre, English-speaking staff, accepts international insurance. Call ahead — not a full 24/7 emergency hospital.",
+      "notes_ka": "საერთაშორისო სამედიცინო ცენტრი, ინგლისურენოვანი პერსონალი, იღებს საერთაშორისო დაზღვევას. ჯერ დარეკე — სრული 24/7 გადაუდებელი საავადმყოფო არ არის.",
+      "notes_ru": "Международный медицинский центр, англоговорящий персонал, принимает международную страховку. Сначала позвоните — это не полноценная круглосуточная больница скорой помощи."
     }
   ],
   "embassies": [

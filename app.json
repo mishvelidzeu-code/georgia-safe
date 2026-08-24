@@ -7,12 +7,23 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.mishvela.georgiasafe",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true,
-        "LSApplicationQueriesSchemes": ["bolt", "yandextaxi", "yandexmaps"]
+        "UIRequiredDeviceCapabilities": [
+          "telephony"
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "LSApplicationQueriesSchemes": [
+          "bolt",
+          "yandextaxi",
+          "yandexmaps",
+          "comgooglemaps"
+        ]
       }
     },
     "android": {
@@ -54,8 +65,8 @@
       [
         "expo-media-library",
         {
-          "photosPermission": "Georgia Safe-ს სურათების გალერეაში შენახვის უფლება სჭირდება, რომ დაზოგოთ უსაფრთხოების ბარათები.",
-          "savePhotosPermission": "Georgia Safe-ს სურათების გალერეაში შენახვის უფლება სჭირდება."
+          "photosPermission": "Georgia Safe saves safety cards to your photo library so you can keep them when you're offline.",
+          "savePhotosPermission": "Georgia Safe needs permission to save images to your photo library."
         }
       ],
       "expo-audio",
@@ -64,20 +75,33 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Georgia Safe-ს სჭირდება თქვენი მდებარეობა, რომ SOS SMS-ს დაურთოს ლოკაციის ბმული."
+          "locationWhenInUsePermission": "Georgia Safe uses your location to show which area you are in, how safe it is right now, and to attach your location to an emergency SOS message.",
+          "locationAlwaysAndWhenInUsePermission": "Georgia Safe can notify you when you arrive at a landmark and can keep watching for risky areas while the app is closed. Without \"Always\", these arrival alerts will not work; everything else in the app still does.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
         }
       ],
       "expo-live-activity",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Georgia Safe-ს სჭირდება სურათების წვდომა, რომ ადგილის შეფასებას ფოტო დაურთოთ.",
-          "cameraPermission": "Georgia Safe-ს სჭირდება კამერის წვდომა, რომ ადგილის შეფასებისთვის ფოტო გადაიღოთ."
+          "photosPermission": "Georgia Safe needs access to your photos so you can attach one to a place you are rating.",
+          "cameraPermission": "Georgia Safe needs access to your camera so you can take a photo of a place you are rating."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/1.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#0f172a"
         }
       ]
     ],
     "updates": {
       "enabled": true,
+      "url": "https://u.expo.dev/52f6378f-cbe4-4f62-8cd1-98c67095754a",
       "checkAutomatically": "NEVER",
       "fallbackToCacheTimeout": 0
     },

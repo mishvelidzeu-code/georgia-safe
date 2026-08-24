@@ -6,6 +6,8 @@ import { colors } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getTrustedContact } from '../lib/storage';
 import { sendLocationSms } from '../lib/locationSms';
+import DraggableFab from './DraggableFab';
+import { alertFeedback, tapFeedback } from '../lib/haptics';
 
 function callNumber(phone: string) {
   // tel: calls use the cellular voice network, not internet data, so this
@@ -20,6 +22,7 @@ export default function SosButton() {
   const [sending, setSending] = useState(false);
 
   async function handleCall112() {
+    alertFeedback();
     setVisible(false);
     callNumber('112');
   }
@@ -38,6 +41,7 @@ export default function SosButton() {
       return;
     }
 
+    tapFeedback();
     setSending(true);
     const result = await sendLocationSms(contact.phone, t('sos.smsBody'), t('sos.smsBodyNoLocation'));
     setSending(false);
@@ -50,10 +54,21 @@ export default function SosButton() {
 
   return (
     <>
-      <Pressable style={styles.fab} onPress={() => setVisible(true)}>
-        <Ionicons name="alert-circle" size={24} color={colors.white} />
-        <Text style={styles.fabText}>SOS</Text>
-      </Pressable>
+      {/* Positioning lives in DraggableFab now — hold the button to move it.
+          A plain tap still opens the emergency sheet immediately; the drag
+          only engages after a deliberate hold. */}
+      <DraggableFab id="sos" width={58} height={58} anchor={{ right: 16, bottom: 92 }}>
+        <Pressable
+          style={styles.fab}
+          onPress={() => {
+            alertFeedback();
+            setVisible(true);
+          }}
+        >
+          <Ionicons name="alert-circle" size={24} color={colors.white} />
+          <Text style={styles.fabText}>SOS</Text>
+        </Pressable>
+      </DraggableFab>
 
       <Modal
         visible={visible}
@@ -92,9 +107,6 @@ export default function SosButton() {
 
 const styles = StyleSheet.create({
   fab: {
-    position: 'absolute',
-    right: 16,
-    bottom: 92,
     width: 58,
     height: 58,
     borderRadius: 29,

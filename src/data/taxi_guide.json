@@ -5,7 +5,7 @@
   "apps": [
     {
       "id": "bolt",
-      "name": "Bolt",
+      "name_en": "Bolt",
       "name_ka": "Bolt",
       "name_ru": "Bolt",
       "recommended": true,
@@ -18,7 +18,7 @@
     },
     {
       "id": "yandex_go",
-      "name": "Yandex Go",
+      "name_en": "Yandex Go",
       "name_ka": "Yandex Go",
       "name_ru": "Yandex Go",
       "recommended": true,
@@ -31,7 +31,7 @@
     },
     {
       "id": "official_taxi",
-      "name": "Official airport/hotel taxi counters",
+      "name_en": "Official airport/hotel taxi counters",
       "name_ka": "აეროპორტის/სასტუმროს ოფიციალური ტაქსის სალარო",
       "name_ru": "Официальные стойки такси в аэропорту/отеле",
       "recommended": false,

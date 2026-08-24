@@ -1,26 +1,44 @@
 {
-  "car_rentals": [
+  "scooter_apps": [
     {
-      "id": "placeholder_car_1",
-      "name_en": "Placeholder Car Rental Partner",
-      "name_ka": "სატესტო მანქანების გაქირავების პარტნიორი",
-      "name_ru": "Тестовый партнёр по прокату авто",
-      "phone": "+995 000 00 00 00",
-      "note_en": "Placeholder entry for testing — will be replaced with a real rental partner.",
-      "note_ka": "სატესტო ჩანაწერია — მალე შეიცვლება რეალური პარტნიორის მონაცემებით.",
-      "note_ru": "Тестовая запись — скоро будет заменена данными реального партнёра."
+      "id": "scroll",
+      "name_en": "Scroll",
+      "name_ka": "Scroll",
+      "name_ru": "Scroll",
+      "cities_en": "Tbilisi, Batumi, Rustavi",
+      "cities_ka": "თბილისი, ბათუმი, რუსთავი",
+      "cities_ru": "Тбилиси, Батуми, Рустави",
+      "note_en": "A Georgian scooter-sharing company, the first to launch the service in the country. Register in the app with a phone number, scan the QR code on the scooter and ride. Park only in the marked zones — the app shows them on its map.",
+      "note_ka": "ქართული სკუტერების გაზიარების კომპანია, პირველი ამ სერვისით ქვეყანაში. დარეგისტრირდი აპში ტელეფონის ნომრით, დაასკანერე QR კოდი სკუტერზე და წადი. გააჩერე მხოლოდ მონიშნულ ზონებში — აპი მათ რუკაზე გიჩვენებს.",
+      "note_ru": "Грузинская компания шеринга самокатов, первая с этим сервисом в стране. Зарегистрируйтесь в приложении по номеру телефона, отсканируйте QR-код на самокате и поезжайте. Парковка только в отмеченных зонах — приложение показывает их на карте.",
+      "available": true
+    },
+    {
+      "id": "jet",
+      "name_en": "JET",
+      "name_ka": "JET",
+      "name_ru": "JET",
+      "cities_en": "Tbilisi, Batumi",
+      "cities_ka": "თბილისი, ბათუმი",
+      "cities_ru": "Тбилиси, Батуми",
+      "note_en": "Scooter sharing in Tbilisi and Batumi. Registration takes a couple of minutes with just a phone number. A scooter can be booked in advance and waits ten minutes for free.",
+      "note_ka": "სკუტერების გაზიარება თბილისსა და ბათუმში. რეგისტრაცია მხოლოდ ტელეფონის ნომრით ორ წუთში სრულდება. სკუტერის წინასწარ დაჯავშნა შეიძლება და ის ათ წუთს უფასოდ გელოდება.",
+      "note_ru": "Шеринг самокатов в Тбилиси и Батуми. Регистрация по номеру телефона занимает пару минут. Самокат можно забронировать заранее — он ждёт десять минут бесплатно.",
+      "available": false
+    },
+    {
+      "id": "yandex_go",
+      "name_en": "Yandex Go",
+      "name_ka": "Yandex Go",
+      "name_ru": "Yandex Go",
+      "cities_en": "Tbilisi, Batumi",
+      "cities_ka": "თბილისი, ბათუმი",
+      "cities_ru": "Тбилиси, Батуми",
+      "note_en": "The same Yandex Go app used for taxis also rents scooters in the larger cities, so there is nothing extra to install.",
+      "note_ka": "იგივე Yandex Go აპი, რომელსაც ტაქსისთვის იყენებ, დიდ ქალაქებში სკუტერებსაც აქირავებს — დამატებით არაფრის დაინსტალირება არ სჭირდება.",
+      "note_ru": "То же приложение Yandex Go, которым вы пользуетесь для такси, в крупных городах сдаёт и самокаты — ставить ничего дополнительно не нужно.",
+      "available": true
     }
   ],
-  "scooter_rentals": [
-    {
-      "id": "placeholder_scooter_1",
-      "name_en": "Placeholder Scooter Rental Partner",
-      "name_ka": "სატესტო სკუტერების გაქირავების პარტნიორი",
-      "name_ru": "Тестовый партнёр по прокату самокатов",
-      "phone": "+995 000 00 00 00",
-      "note_en": "Placeholder entry for testing — will be replaced with a real rental partner.",
-      "note_ka": "სატესტო ჩანაწერია — მალე შეიცვლება რეალური პარტნიორის მონაცემებით.",
-      "note_ru": "Тестовая запись — скоро будет заменена данными реального партнёра."
-    }
-  ]
+  "car_rentals": []
 }

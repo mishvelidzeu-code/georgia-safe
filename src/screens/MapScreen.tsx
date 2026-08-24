@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { DeviceEventEmitter, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import MapView, { Circle, Marker } from 'react-native-maps';
-import type { LongPressEvent } from 'react-native-maps';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import * as Location from 'expo-location';
+import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import type { LongPressEvent, PoiClickEvent } from 'react-native-maps';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import zonesData from '../data/zones.json';
@@ -19,11 +21,23 @@ import type { ZoneVote } from '../lib/feedback';
 import ReviewModal from '../components/ReviewModal';
 import type { PlaceReviewType } from '../lib/placeReviews';
 import NewPlaceModal from '../components/NewPlaceModal';
+import LandmarkMarker from '../components/LandmarkMarker';
 import { fetchPlaceSubmissions } from '../lib/placeSubmissions';
+import { fetchPlacePhotos, photoKey } from '../lib/placePhotos';
+import { usePremium } from '../premium/PremiumContext';
+import type { PlacePhoto } from '../lib/placePhotos';
 import type { PlaceSubmission, PlaceSubmissionCategory } from '../lib/placeSubmissions';
 import { currentTimeOfDay, isEveningOrLater } from '../lib/guardianContext';
+import { isInsideGeorgia } from '../lib/geography';
 import { presentEveningZoneNotification } from '../lib/notifications';
 import { startEveningZoneLiveActivity } from '../lib/liveActivity';
+import {
+  shouldSendEveningNudgeToday,
+  getVisitedLandmarkIds,
+  addVisitedLandmarkId,
+  removeVisitedLandmarkId,
+} from '../lib/storage';
+import { initLandmarkGeofencing, refreshLandmarkGeofences } from '../lib/landmarkGeofencing';
 
 type LandmarkCategory =
   | 'monument'
@@ -34,7 +48,8 @@ type LandmarkCategory =
   | 'theatre'
   | 'market'
   | 'viewpoint'
-  | 'park';
+  | 'park'
+  | 'museum';
 
 type Landmark = {
   id: string;
@@ -50,18 +65,26 @@ type Landmark = {
 };
 
 type TimeMode = 'day' | 'night';
+
+// A point of interest baked into the Google basemap (cafe, shop, hotel...).
+// Google gives us only these three fields for free; anything richer (opening
+// hours, rating, photos) would require a billed Places API call, which the app
+// deliberately does not make.
+type Poi = {
+  placeId: string;
+  name: string;
+  lat: number;
+  lng: number;
+};
+
 type Selection =
   | { type: 'zone'; zone: Zone }
   | { type: 'landmark'; landmark: Landmark }
   | { type: 'place'; place: SafePlace }
-  | { type: 'submission'; submission: PlaceSubmission };
+  | { type: 'submission'; submission: PlaceSubmission }
+  | { type: 'poi'; poi: Poi };
 
 const landmarks = landmarksData as Landmark[];
-
-// Fire the evening zone nudge (notification + Live Activity) at most once per
-// app session, even if the Map tab remounts — otherwise every tab switch after
-// 19:00 would re-notify.
-let eveningNudgeSent = false;
 
 type ZoneTier = 'darkgreen' | 'green' | 'gold' | 'red';
 
@@ -83,6 +106,10 @@ const TIER_COLORS: Record<ZoneTier, string> = {
   red: '#ef4444',
 };
 
+// Radius of the circle drawn for every zone, and therefore the catchment used
+// when deciding which zone a tapped basemap POI belongs to.
+const ZONE_RADIUS_M = 800;
+
 const TIER_LABEL_KEYS: Record<ZoneTier, string> = {
   darkgreen: 'map.levelVerySafe',
   green: 'map.levelSafe',
@@ -100,6 +127,7 @@ const CATEGORY_ICONS: Record<LandmarkCategory, keyof typeof Ionicons.glyphMap> =
   market: 'storefront',
   viewpoint: 'trail-sign',
   park: 'leaf',
+  museum: 'home',
 };
 
 // Icon assigned automatically to a tourist-submitted place based on the
@@ -151,6 +179,10 @@ const TBILISI_REGION = {
   longitudeDelta: 0.16,
 };
 
+// How often to re-pick the nearest 20 unvisited landmarks to geofence, as
+// the tourist travels between regions (see landmarkGeofencing.ts).
+const GEOFENCE_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+
 function PlaceIcon({ type, color }: { type: SafePlaceType; color: string }) {
   if (type === 'toilet') {
     return <MaterialCommunityIcons name="toilet" size={14} color={color} />;
@@ -166,6 +198,27 @@ function PlaceIcon({ type, color }: { type: SafePlaceType; color: string }) {
   return <Ionicons name={name} size={14} color={color} />;
 }
 
+/**
+ * Curated photos inside an info sheet. Renders nothing at all when a place has
+ * none, so the great majority of pins keep their current compact layout.
+ */
+function PlacePhotoStrip({ photos }: { photos?: PlacePhoto[] }) {
+  if (!photos || photos.length === 0) return null;
+  return (
+    <View style={styles.photoStrip}>
+      {photos.map((photo) => (
+        <Image
+          key={photo.id}
+          source={{ uri: photo.url }}
+          style={styles.placePhoto}
+          contentFit="cover"
+          transition={150}
+        />
+      ))}
+    </View>
+  );
+}
+
 function withOpacity(hex: string, opacity: number): string {
   const alpha = Math.round(opacity * 255)
     .toString(16)
@@ -173,23 +226,127 @@ function withOpacity(hex: string, opacity: number): string {
   return `${hex}${alpha}`;
 }
 
-function openDirections(lat: number, lng: number, label: string) {
+function openDirections(lat: number, lng: number, placeId?: string) {
+  // Universal Google Maps URL — free, no API call, opens the Google Maps app
+  // when installed and the website otherwise. `destination_place_id` is only
+  // appended when we hold a real Google place ID (basemap POI taps); for our
+  // own JSON pins the coordinates alone are the correct destination.
   // Requires internet — silently fails instead of throwing when offline.
-  const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(
-    label,
+  const base = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  const url = placeId ? `${base}&destination_place_id=${encodeURIComponent(placeId)}` : base;
+  Linking.openURL(url).catch(() => {});
+}
+
+function openInGoogleMaps(placeId: string, lat: number, lng: number) {
+  // Place details page rather than a route — same free URL scheme.
+  const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${encodeURIComponent(
+    placeId,
   )}`;
   Linking.openURL(url).catch(() => {});
 }
 
+// Metres between two coordinates (haversine). Used only to match a tapped
+// basemap POI against a safety zone, so the cheap spherical model is plenty.
+function distanceMeters(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+): number {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+// Two markers on the exact same coordinate make Google Maps flicker: it has no
+// stable rule for which to draw on top, so it swaps them on every redraw.
+// Explicit, distinct zIndex values per layer remove the ambiguity.
+const Z_INDEX = {
+  zone: 1,
+  landmark: 2,
+  place: 3,
+  submission: 4,
+  newPin: 5,
+} as const;
+
+// A safe place sitting within this distance of a landmark is treated as
+// overlapping it, and its pin is nudged sideways so both stay visible. Several
+// entries in safe_places.json share a landmark's exact coordinate (the ATMs at
+// Freedom Square and Rustaveli Theatre are at 0m), which is what stacked them.
+const PIN_OVERLAP_M = 30;
+
+// Anchor moves the pin image relative to its coordinate without touching the
+// underlying data: the default rests the pin's tip on the point, the offset
+// variant rests its left edge there, shifting it half a pin to the right.
+const PIN_ANCHOR = { x: 0.5, y: 1 };
+const PIN_ANCHOR_OFFSET = { x: 0, y: 1 };
+
+// Closest zone whose drawn circle (ZONE_RADIUS_M) covers the point, or null
+// when the point sits outside every zone we have data for.
+function findZoneAt(lat: number, lng: number, zones: Zone[]): Zone | null {
+  let closest: Zone | null = null;
+  let closestDistance = Number.POSITIVE_INFINITY;
+  for (const zone of zones) {
+    const distance = distanceMeters(lat, lng, zone.lat, zone.lng);
+    if (distance <= ZONE_RADIUS_M && distance < closestDistance) {
+      closest = zone;
+      closestDistance = distance;
+    }
+  }
+  return closest;
+}
+
 export default function MapScreen() {
   const { t, language } = useLanguage();
+  const { premium, freeRemaining, showPaywall } = usePremium();
   const zones = useRemoteData(zonesData as Zone[], fetchZones);
   const safePlaces = useRemoteData(safePlacesData as SafePlace[], fetchSafePlaces);
+  // Blue "you are here" dot on the map. Requesting the permission explicitly
+  // (rather than just setting showsUserLocation) is required on Android for
+  // the dot to ever appear; on iOS it also triggers the system prompt on
+  // first launch instead of silently showing nothing. Denied/unavailable
+  // just means no dot — never blocks the rest of the map.
+  const [locationGranted, setLocationGranted] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    Location.requestForegroundPermissionsAsync()
+      .then(({ status }) => {
+        if (!cancelled) setLocationGranted(status === 'granted');
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   // Tourist-submitted places (Phase 4.5c) — no local/offline fallback exists
   // for this dynamic, user-generated layer, so it starts empty and only
   // appears if/when Supabase is reachable. Managed directly (not via
   // useRemoteData, which only fetches once per mount) so a successful new
   // submission can trigger an immediate re-fetch to show the new pin.
+  // Admin-curated photos for landmarks and safe places, fetched once and kept
+  // as a lookup table — a sheet must be able to show its photos the instant it
+  // opens, not after a per-place round trip. Empty until Supabase answers;
+  // sheets simply render without photos in the meantime.
+  const [placePhotos, setPlacePhotos] = useState<Record<string, PlacePhoto[]>>({});
+  useEffect(() => {
+    let cancelled = false;
+    fetchPlacePhotos()
+      .then((map) => {
+        if (!cancelled) setPlacePhotos(map);
+      })
+      .catch(() => {
+        // Offline — the sheets just show no photos.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [submittedPlaces, setSubmittedPlaces] = useState<PlaceSubmission[]>([]);
   const refreshSubmittedPlaces = useCallback(() => {
     fetchPlaceSubmissions()
@@ -221,14 +378,18 @@ export default function MapScreen() {
   // toggle them manually either way.
   const [showZones, setShowZones] = useState(() => isEveningOrLater());
   const [showEveningToast, setShowEveningToast] = useState(() => isEveningOrLater());
+  // Explains why the map is showing Tbilisi instead of where the user is.
+  // Unlike the evening/night toasts this one has no timer — it describes a
+  // state that is still true a minute later, so it stays until dismissed.
+  const [showAbroadToast, setShowAbroadToast] = useState(false);
 
   useEffect(() => {
     if (!isEveningOrLater()) return;
-    if (!eveningNudgeSent) {
-      eveningNudgeSent = true;
+    shouldSendEveningNudgeToday().then((shouldSend) => {
+      if (!shouldSend) return;
       presentEveningZoneNotification(t('map.eveningNotifTitle'), t('map.eveningNotifBody'));
       startEveningZoneLiveActivity(t('map.eveningNotifTitle'), t('map.eveningZonesOn'));
-    }
+    });
     const timeout = setTimeout(() => setShowEveningToast(false), 6000);
     return () => clearTimeout(timeout);
   }, [t]);
@@ -251,14 +412,141 @@ export default function MapScreen() {
   } | null>(null);
   const [newPlacePin, setNewPlacePin] = useState<{ lat: number; lng: number } | null>(null);
 
-  const handleMapLongPress = useCallback((e: LongPressEvent) => {
-    const { latitude, longitude } = e.nativeEvent.coordinate;
-    setNewPlacePin({ lat: latitude, lng: longitude });
-  }, []);
+  const handleMapLongPress = useCallback(
+    (e: LongPressEvent) => {
+      // Marking a place is premium: it costs storage and it costs the admin a
+      // moderation decision. Blocked here and again by RLS on the insert.
+      if (!premium) {
+        showPaywall('contribute');
+        return;
+      }
+      const { latitude, longitude } = e.nativeEvent.coordinate;
+      setNewPlacePin({ lat: latitude, lng: longitude });
+    },
+    [premium, showPaywall],
+  );
+
+  // Tap on a POI drawn by Google itself (cafe, hotel, shop). We show the name
+  // Google gives us plus our own safety reading for the zone it falls in —
+  // the part of the sheet that no map app provides.
+  //
+  // Gated by the same free allowance as the assistant: once it is spent, the
+  // tap opens the paywall instead. Deliberately limited to Google's own POIs —
+  // our safety layers (zones, landmarks, pharmacies, ATMs, hospitals, police)
+  // stay free for everyone, which is what the paywall itself promises.
+  const handlePoiClick = useCallback(
+    (e: PoiClickEvent) => {
+      if (!premium && freeRemaining <= 0) {
+        showPaywall('poi');
+        return;
+      }
+      const { placeId, name, coordinate } = e.nativeEvent;
+      setSelection({
+        type: 'poi',
+        poi: {
+          placeId,
+          name,
+          lat: coordinate.latitude,
+          lng: coordinate.longitude,
+        },
+      });
+      bottomSheetRef.current?.expand();
+    },
+    [premium, freeRemaining, showPaywall],
+  );
 
   const mapRef = useRef<MapView>(null);
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['38%'], []);
+  // Dimmed backdrop behind the info sheet — tapping it (anywhere on the map
+  // outside the sheet) closes the sheet, same as swiping it down or hitting
+  // an explicit close button.
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop
+        {...props}
+        appearsOnIndex={0}
+        disappearsOnIndex={-1}
+        pressBehavior="close"
+      />
+    ),
+    [],
+  );
+
+  // Center the map on the tourist's actual location on launch, instead of
+  // always opening on Tbilisi — if they're in Batumi, the map should open
+  // on Batumi. Runs once, right after the permission effect above resolves
+  // to granted. TBILISI_REGION (passed as initialRegion) stays as the
+  // fallback first paint and for denied/unavailable location.
+  //
+  // Outside Georgia we deliberately do NOT follow the location: every pin,
+  // zone and landmark this app has is Georgian, so centering on someone's
+  // home town abroad (or on an App Store reviewer's desk) produces a blank
+  // map that reads as a broken app. They stay on Tbilisi and get told why.
+  useEffect(() => {
+    if (!locationGranted) return;
+    let cancelled = false;
+    Location.getCurrentPositionAsync({})
+      .then((position) => {
+        if (cancelled) return;
+        const { latitude, longitude } = position.coords;
+        if (!isInsideGeorgia(latitude, longitude)) {
+          setShowAbroadToast(true);
+          return;
+        }
+        mapRef.current?.animateToRegion(
+          { latitude, longitude, latitudeDelta: 0.16, longitudeDelta: 0.16 },
+          400,
+        );
+      })
+      .catch(() => {
+        // Unavailable — keep showing the Tbilisi fallback region.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [locationGranted]);
+
+  // Landmark "visited" tracking (arrival geofencing) — see
+  // src/lib/landmarkGeofencing.ts. Loads persisted state on mount, starts
+  // background geofencing once location is granted (best-effort — never
+  // blocks the rest of the map if the tourist declines "Always" permission),
+  // and periodically refreshes which landmarks are being watched as they
+  // move between regions (iOS caps simultaneously monitored regions at 20,
+  // so we can't just watch all of them at once).
+  const [visitedLandmarkIds, setVisitedLandmarkIds] = useState<Set<string>>(new Set());
+  const [justVisitedId, setJustVisitedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    getVisitedLandmarkIds().then((ids) => setVisitedLandmarkIds(new Set(ids)));
+  }, []);
+
+  useEffect(() => {
+    const subscription = DeviceEventEmitter.addListener('landmarkVisited', (id: string) => {
+      setVisitedLandmarkIds((prev) => new Set(prev).add(id));
+      setJustVisitedId(id);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!locationGranted) return;
+    let cancelled = false;
+    initLandmarkGeofencing();
+    const interval = setInterval(() => {
+      Location.getCurrentPositionAsync({})
+        .then((position) => {
+          if (!cancelled) {
+            refreshLandmarkGeofences(position.coords.latitude, position.coords.longitude);
+          }
+        })
+        .catch(() => {});
+    }, GEOFENCE_REFRESH_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [locationGranted]);
 
   const circles = useMemo(
     () =>
@@ -283,6 +571,39 @@ export default function MapScreen() {
     submitZoneFeedback(zoneId, vote);
   }, []);
 
+  // Manual override for the "visited" state, from the landmark sheet. The
+  // geofence only fires if the tourist actually walks into the region, so a
+  // place they drove past (or one the 70m geofence missed) can be ticked off
+  // by hand — and a wrongly marked one put back to unvisited. Re-registering
+  // the geofences afterwards matters: only unvisited landmarks are watched,
+  // so an un-marked place must start being watched again.
+  const handleToggleVisited = useCallback(
+    (landmarkId: string) => {
+      const nowVisited = !visitedLandmarkIds.has(landmarkId);
+      setVisitedLandmarkIds((prev) => {
+        const next = new Set(prev);
+        if (nowVisited) next.add(landmarkId);
+        else next.delete(landmarkId);
+        return next;
+      });
+      // No arrival animation on a manual tick — that flash means "you just
+      // got here", which is exactly what didn't happen.
+      setJustVisitedId((current) => (current === landmarkId ? null : current));
+      const persisted = nowVisited
+        ? addVisitedLandmarkId(landmarkId)
+        : removeVisitedLandmarkId(landmarkId);
+      persisted.then(() => {
+        if (!locationGranted) return;
+        Location.getCurrentPositionAsync({})
+          .then((position) =>
+            refreshLandmarkGeofences(position.coords.latitude, position.coords.longitude),
+          )
+          .catch(() => {});
+      });
+    },
+    [visitedLandmarkIds, locationGranted],
+  );
+
   const handleLandmarkPress = useCallback((landmark: Landmark) => {
     setSelection({ type: 'landmark', landmark });
     mapRef.current?.animateToRegion(
@@ -302,6 +623,38 @@ export default function MapScreen() {
     bottomSheetRef.current?.expand();
   }, []);
 
+  const handleCenterOnMe = useCallback(async () => {
+    try {
+      let granted = locationGranted;
+      if (!granted) {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        granted = status === 'granted';
+        setLocationGranted(granted);
+      }
+      if (!granted) return;
+      const position = await Location.getCurrentPositionAsync({});
+      // An explicit "take me to where I am" is still honoured abroad — but
+      // the hint comes along, so an empty screen isn't a mystery.
+      if (!isInsideGeorgia(position.coords.latitude, position.coords.longitude)) {
+        setShowAbroadToast(true);
+      }
+      mapRef.current?.animateToRegion(
+        {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          // Tighter than the landmark zoom (0.01) — this is a direct "take me
+          // to exactly where I am" action, so it should feel noticeably closer.
+          latitudeDelta: 0.004,
+          longitudeDelta: 0.004,
+        },
+        400,
+      );
+    } catch {
+      // Location unavailable/denied — silently no-op, matches the rest of
+      // the app's offline-first, never-block-on-location philosophy.
+    }
+  }, [locationGranted]);
+
   const togglePlaceType = useCallback((type: SafePlaceType, value: boolean) => {
     setPlaceVisibility((prev) => ({ ...prev, [type]: value }));
   }, []);
@@ -315,20 +668,60 @@ export default function MapScreen() {
   const selectedZoneTier =
     selectedZoneScore !== null ? scoreToTier(selectedZoneScore) : null;
 
+  // Safety reading for a tapped basemap POI: the zone it sits in, scored for
+  // the currently selected time of day. Null when the POI is outside every
+  // zone we have data for — the sheet then says so rather than guessing.
+  const poiZone = useMemo(
+    () =>
+      selection?.type === 'poi'
+        ? findZoneAt(selection.poi.lat, selection.poi.lng, zones)
+        : null,
+    [selection, zones],
+  );
+  const poiZoneScore = poiZone
+    ? mode === 'day'
+      ? poiZone.day_score
+      : poiZone.night_score
+    : null;
+  const poiZoneTier = poiZoneScore !== null ? scoreToTier(poiZoneScore) : null;
+
+  // Safe places whose pin would land on top of a landmark pin. Computed from
+  // the data rather than hardcoded ids, so any future entry that collides is
+  // nudged automatically.
+  const overlappingPlaceIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const place of safePlaces) {
+      const collides = landmarks.some(
+        (landmark) =>
+          distanceMeters(place.lat, place.lng, landmark.lat, landmark.lng) < PIN_OVERLAP_M,
+      );
+      if (collides) ids.add(place.id);
+    }
+    return ids;
+  }, [safePlaces]);
+
   return (
     <View style={styles.container}>
       <MapView
         ref={mapRef}
         style={styles.map}
+        // Google Maps on both platforms: iOS defaults to Apple Maps, whose
+        // built-in POIs are drawn but not tappable (no onPoiClick). Google's
+        // are tappable, which is what feeds the POI sheet below. Mobile map
+        // loads are not billed.
+        provider={PROVIDER_GOOGLE}
         initialRegion={TBILISI_REGION}
         onLongPress={handleMapLongPress}
+        onPoiClick={handlePoiClick}
+        showsUserLocation={locationGranted}
+        showsMyLocationButton={false}
       >
         {showZones &&
           circles.map(({ zone, color }) => (
             <Circle
               key={zone.id}
               center={{ latitude: zone.lat, longitude: zone.lng }}
-              radius={800}
+              radius={ZONE_RADIUS_M}
               fillColor={withOpacity(color, 0.25)}
               strokeColor={color}
               strokeWidth={2}
@@ -340,8 +733,8 @@ export default function MapScreen() {
             <Marker
               key={`${zone.id}-marker`}
               coordinate={{ latitude: zone.lat, longitude: zone.lng }}
-              title={localizedField(zone, 'name', language)}
               tracksViewChanges={false}
+              zIndex={Z_INDEX.zone}
               onPress={() => handleZonePress(zone)}
             >
               <View style={[styles.zoneDot, { backgroundColor: color }]} />
@@ -350,25 +743,22 @@ export default function MapScreen() {
 
         {showLandmarks &&
           landmarks.map((landmark) => (
-            <Marker
+            <LandmarkMarker
               key={landmark.id}
-              coordinate={{ latitude: landmark.lat, longitude: landmark.lng }}
+              lat={landmark.lat}
+              lng={landmark.lng}
               title={localizedField(landmark, 'name', language)}
-              anchor={{ x: 0.5, y: 1 }}
-              tracksViewChanges={false}
+              icon={CATEGORY_ICONS[landmark.category]}
+              color={LANDMARK_COLOR}
+              visited={visitedLandmarkIds.has(landmark.id)}
+              justVisited={justVisitedId === landmark.id}
+              selected={selection?.type === 'landmark' && selection.landmark.id === landmark.id}
+              zIndex={Z_INDEX.landmark}
+              onAnimationDone={() =>
+                setJustVisitedId((current) => (current === landmark.id ? null : current))
+              }
               onPress={() => handleLandmarkPress(landmark)}
-            >
-              <View style={styles.pinContainer}>
-                <View style={styles.pinBubble}>
-                  <Ionicons
-                    name={CATEGORY_ICONS[landmark.category]}
-                    size={13}
-                    color={colors.background}
-                  />
-                </View>
-                <View style={styles.pinArrow} />
-              </View>
-            </Marker>
+            />
           ))}
 
         {safePlaces
@@ -377,9 +767,9 @@ export default function MapScreen() {
             <Marker
               key={place.id}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
-              title={place.name}
-              anchor={{ x: 0.5, y: 1 }}
+              anchor={overlappingPlaceIds.has(place.id) ? PIN_ANCHOR_OFFSET : PIN_ANCHOR}
               tracksViewChanges={false}
+              zIndex={Z_INDEX.place}
               onPress={() => handlePlacePress(place)}
             >
               <View style={styles.pinContainer}>
@@ -399,8 +789,9 @@ export default function MapScreen() {
           <Marker
             key={submission.id}
             coordinate={{ latitude: submission.lat, longitude: submission.lng }}
-            anchor={{ x: 0.5, y: 1 }}
+            anchor={PIN_ANCHOR}
             tracksViewChanges={false}
+            zIndex={Z_INDEX.submission}
             onPress={() => {
               setSelection({ type: 'submission', submission });
               bottomSheetRef.current?.expand();
@@ -434,7 +825,8 @@ export default function MapScreen() {
         {newPlacePin && (
           <Marker
             coordinate={{ latitude: newPlacePin.lat, longitude: newPlacePin.lng }}
-            anchor={{ x: 0.5, y: 1 }}
+            anchor={PIN_ANCHOR}
+            zIndex={Z_INDEX.newPin}
             pinColor={colors.safe}
           />
         )}
@@ -479,8 +871,21 @@ export default function MapScreen() {
         <Ionicons name="information-circle" size={22} color={colors.text} />
       </Pressable>
 
-      {(showEveningToast || showAutoNightToast) && (
+      <Pressable style={styles.locateButtonBottom} onPress={handleCenterOnMe}>
+        <Ionicons name="locate" size={22} color={colors.white} />
+      </Pressable>
+
+      {(showEveningToast || showAutoNightToast || showAbroadToast) && (
         <View style={styles.toastStack} pointerEvents="box-none">
+          {showAbroadToast && (
+            <View style={styles.infoToast}>
+              <Ionicons name="airplane" size={14} color={colors.text} />
+              <Text style={styles.infoToastText}>{t('map.outsideGeorgia')}</Text>
+              <Pressable onPress={() => setShowAbroadToast(false)} hitSlop={8}>
+                <Ionicons name="close" size={14} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          )}
           {showEveningToast && (
             <View style={styles.infoToast}>
               <Ionicons name="shield-checkmark" size={14} color={colors.safe} />
@@ -562,10 +967,15 @@ export default function MapScreen() {
         index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose
+        backdropComponent={renderBackdrop}
         backgroundStyle={styles.sheetBackground}
         handleIndicatorStyle={styles.sheetHandle}
       >
-        <BottomSheetView style={styles.sheetContent}>
+        <BottomSheetScrollView
+          style={styles.sheetContent}
+          contentContainerStyle={styles.sheetContentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {selection?.type === 'zone' && selectedZoneTier && selectedZoneScore !== null && (
             <>
               <Text style={styles.sheetTitle}>
@@ -615,14 +1025,11 @@ export default function MapScreen() {
               <Text style={styles.landmarkDescription}>
                 {localizedField(selection.landmark, 'description', language)}
               </Text>
+              <PlacePhotoStrip photos={placePhotos[photoKey('landmark', selection.landmark.id)]} />
               <Pressable
                 style={styles.directionsButton}
                 onPress={() =>
-                  openDirections(
-                    selection.landmark.lat,
-                    selection.landmark.lng,
-                    localizedField(selection.landmark, 'name', language),
-                  )
+                  openDirections(selection.landmark.lat, selection.landmark.lng)
                 }
               >
                 <Ionicons name="navigate" size={18} color={colors.background} />
@@ -630,8 +1037,31 @@ export default function MapScreen() {
               </Pressable>
               <Pressable
                 style={styles.reviewButton}
+                onPress={() => handleToggleVisited(selection.landmark.id)}
+              >
+                <Ionicons
+                  name={
+                    visitedLandmarkIds.has(selection.landmark.id)
+                      ? 'arrow-undo'
+                      : 'checkmark-circle'
+                  }
+                  size={18}
+                  color={
+                    visitedLandmarkIds.has(selection.landmark.id) ? colors.textMuted : colors.safe
+                  }
+                />
+                <Text style={styles.reviewButtonText}>
+                  {visitedLandmarkIds.has(selection.landmark.id)
+                    ? t('landmarks.markNotVisited')
+                    : t('landmarks.markVisited')}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={styles.reviewButton}
                 onPress={() =>
-                  setReviewTarget({
+                  !premium
+                    ? showPaywall('contribute')
+                    : setReviewTarget({
                     id: selection.landmark.id,
                     type: 'landmark',
                     name: localizedField(selection.landmark, 'name', language),
@@ -651,10 +1081,11 @@ export default function MapScreen() {
                 {selection.place.address}
                 {selection.place.open_24h ? ` · ${t('map.open24h')}` : ''}
               </Text>
+              <PlacePhotoStrip photos={placePhotos[photoKey('place', selection.place.id)]} />
               <Pressable
                 style={styles.directionsButton}
                 onPress={() =>
-                  openDirections(selection.place.lat, selection.place.lng, selection.place.name)
+                  openDirections(selection.place.lat, selection.place.lng)
                 }
               >
                 <Ionicons name="navigate" size={18} color={colors.background} />
@@ -663,7 +1094,9 @@ export default function MapScreen() {
               <Pressable
                 style={styles.reviewButton}
                 onPress={() =>
-                  setReviewTarget({
+                  !premium
+                    ? showPaywall('contribute')
+                    : setReviewTarget({
                     id: selection.place.id,
                     type: 'place',
                     name: selection.place.name,
@@ -717,11 +1150,7 @@ export default function MapScreen() {
               <Pressable
                 style={styles.directionsButton}
                 onPress={() =>
-                  openDirections(
-                    selection.submission.lat,
-                    selection.submission.lng,
-                    t('newPlace.title'),
-                  )
+                  openDirections(selection.submission.lat, selection.submission.lng)
                 }
               >
                 <Ionicons name="navigate" size={18} color={colors.background} />
@@ -729,7 +1158,54 @@ export default function MapScreen() {
               </Pressable>
             </>
           )}
-        </BottomSheetView>
+
+          {selection?.type === 'poi' && (
+            <>
+              <Text style={styles.sheetTitle}>{selection.poi.name}</Text>
+              {poiZone && poiZoneTier && poiZoneScore !== null ? (
+                <>
+                  <View style={styles.scoreRow}>
+                    <View
+                      style={[styles.levelDot, { backgroundColor: TIER_COLORS[poiZoneTier] }]}
+                    />
+                    <Text style={styles.sheetScore}>
+                      {localizedField(poiZone, 'name', language)} · {poiZoneScore}/100 ·{' '}
+                      {t(TIER_LABEL_KEYS[poiZoneTier])}
+                    </Text>
+                  </View>
+                  {localizedList(poiZone, 'tips', language)
+                    .slice(0, 2)
+                    .map((tip) => (
+                      <Text key={tip} style={styles.tip}>
+                        • {tip}
+                      </Text>
+                    ))}
+                </>
+              ) : (
+                <Text style={styles.landmarkDescription}>{t('map.poiNoZone')}</Text>
+              )}
+              <Pressable
+                style={styles.directionsButton}
+                onPress={() =>
+                  openDirections(selection.poi.lat, selection.poi.lng, selection.poi.placeId)
+                }
+              >
+                <Ionicons name="navigate" size={18} color={colors.background} />
+                <Text style={styles.directionsText}>{t('map.getDirections')}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.reviewButton}
+                onPress={() =>
+                  openInGoogleMaps(selection.poi.placeId, selection.poi.lat, selection.poi.lng)
+                }
+              >
+                <Ionicons name="open-outline" size={18} color={colors.text} />
+                <Text style={styles.reviewButtonText}>{t('map.openInGoogleMaps')}</Text>
+              </Pressable>
+            </>
+          )}
+
+        </BottomSheetScrollView>
       </BottomSheet>
 
       {newPlacePin && (
@@ -854,6 +1330,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Same top-right row as layers/legend (right:16/66) — continuing the row
+  // at right:116 so it's in the same immediately-visible cluster the user
+  // already finds easily, instead of bottom-right where it turned out to be
+  // easy to miss (likely crowded by the tab bar).
+  // Bottom-right, directly below the SOS button (right:16, bottom:92,
+  // 58x58) — a 26pt gap above this button's top edge. Blue to match the
+  // native "you are here" dot's color, so it reads as "the location control".
+  locateButtonBottom: {
+    position: 'absolute',
+    bottom: 24,
+    right: 16,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#3b82f6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.black,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
   legendPanel: {
     position: 'absolute',
     top: 104,
@@ -971,8 +1470,11 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     flex: 1,
+  },
+  sheetContentContainer: {
     paddingHorizontal: 20,
     paddingTop: 8,
+    paddingBottom: 24,
   },
   sheetTitle: {
     color: colors.text,
@@ -1070,6 +1572,17 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 15,
     fontWeight: '700',
+  },
+  photoStrip: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  placePhoto: {
+    flex: 1,
+    height: 110,
+    borderRadius: 10,
+    backgroundColor: colors.card,
   },
   submissionPhoto: {
     width: '100%',
