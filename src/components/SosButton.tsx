@@ -47,7 +47,13 @@ export default function SosButton() {
     setSending(false);
     setVisible(false);
 
-    if (result === 'unavailable') {
+    if (result === 'sent') {
+      Alert.alert(t('sos.smsSentTitle'), t('sos.smsSentMessage'));
+    } else if (result === 'cancelled') {
+      Alert.alert(t('sos.smsCancelledTitle'), t('sos.smsCancelledMessage'));
+    } else if (result === 'unknown') {
+      Alert.alert(t('sos.smsUnknownTitle'), t('sos.smsUnknownMessage'));
+    } else {
       Alert.alert(t('sos.smsFailedTitle'), t('sos.smsFailedMessage'));
     }
   }
@@ -81,6 +87,8 @@ export default function SosButton() {
             <Text style={styles.title}>{t('sos.title')}</Text>
             <Text style={styles.subtitle}>{t('sos.subtitle')}</Text>
 
+            <Text style={styles.callNote}>{t('sos.call112Note')}</Text>
+
             <Pressable style={[styles.actionButton, styles.callButton]} onPress={handleCall112}>
               <Ionicons name="call" size={20} color={colors.white} />
               <Text style={styles.actionText}>{t('sos.call112')}</Text>
@@ -94,6 +102,7 @@ export default function SosButton() {
               <Ionicons name="chatbubble-ellipses" size={20} color={colors.white} />
               <Text style={styles.actionText}>{t('sos.smsContact')}</Text>
             </Pressable>
+            <Text style={styles.smsNote}>{t('sos.smsContactNote')}</Text>
 
             <Pressable style={styles.cancelButton} onPress={() => setVisible(false)}>
               <Text style={styles.cancelText}>{t('common.cancel')}</Text>
@@ -148,6 +157,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginBottom: 16,
   },
+  callNote: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 10,
+  },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -167,6 +182,13 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  smsNote: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: -4,
+    marginBottom: 10,
   },
   cancelButton: {
     alignItems: 'center',

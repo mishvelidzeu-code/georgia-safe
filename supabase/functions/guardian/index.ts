@@ -163,11 +163,12 @@ function buildSystemPrompt(context: Omit<GuardianRequest, 'message' | 'messages'
       'call/directions buttons, the user\'s own embassy, Georgian phrases to show a local, ' +
       'and a fake-call button.\n' +
       'PROFILE: app language (English/Georgian/Russian), nationality, a trusted contact ' +
-      '(name + phone), a check-in timer that automatically texts the trusted contact with ' +
-      'GPS location if the user doesn\'t confirm they\'re back in time, and a fake-call ' +
-      'button.\n' +
-      'ON EVERY SCREEN: a red floating SOS button (bottom-right) that can call 112 or text ' +
-      'the trusted contact an SOS SMS with a GPS location link, and your own mascot button ' +
+      '(name + phone), and a fake-call button.\n' +
+      'ON EVERY SCREEN: a red floating SOS button (bottom-right) that can open a call to ' +
+      '112 or prepare an SMS with a GPS location link for the trusted contact. The user ' +
+      'must review and send that SMS themselves. Georgia Safe does not transmit location ' +
+      'to 112, dispatch emergency services, notify nearby app users, or verify SMS ' +
+      'delivery. Your own mascot button ' +
       '(bottom-left) that opens this chat — it sometimes pops up a small speech bubble ' +
       'suggesting a question. At night in a caution/high-risk zone an orange banner offers ' +
       'a safer route through you. When it genuinely helps, point the user to these ' +

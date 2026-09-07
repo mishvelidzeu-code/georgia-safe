@@ -91,6 +91,7 @@ export default function EmergencyScreen() {
           <Ionicons name="call" size={28} color={colors.white} />
           <Text style={styles.sosText}>{t('emergency.call112')}</Text>
         </Pressable>
+        <Text style={styles.call112Note}>{t('emergency.call112Note')}</Text>
 
         <Text style={styles.sectionTitle}>{t('fakeCall.title')}</Text>
         <FakeCallButton />
@@ -231,6 +232,14 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 24,
     fontWeight: '700',
+  },
+  call112Note: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    marginTop: -10,
+    marginBottom: 18,
   },
   sectionTitle: {
     color: colors.text,

@@ -15,8 +15,8 @@ import { useLanguage } from '../i18n/LanguageContext';
  * anonymous caller cannot be limited), contributing places and reviews (they
  * are attributed and moderated), and buying a plan (an entitlement has to
  * belong to an account or it is lost on reinstall). Everything else — map,
- * zones, landmarks, pharmacies, scams, emergency numbers, embassies, SOS,
- * fake call, check-in timer — stays open with no account.
+ * zones, landmarks, pharmacies, scams, emergency numbers, embassies, SOS and
+ * fake call — stays open with no account.
  */
 export function useAccountPrompt(): { requireAccount: () => boolean } {
   const { guest, leaveGuest } = useAuth();

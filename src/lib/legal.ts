@@ -5,14 +5,15 @@ import { Linking, Platform } from 'react-native';
 // App Store Review Guideline 3.1.2 requires that any screen selling a
 // subscription shows working links to the terms of use and the privacy policy,
 // and that the app tells people how to manage what they bought. A dead link
-// here is one of the most common reasons a paywall is rejected, so all three
-// live in one place instead of being typed into components.
+// here is one of the most common reasons a paywall is rejected, so external
+// legal destinations live in one place instead of being typed into components.
 
 /**
- * Apple's standard EULA. Apple accepts this in place of custom terms, and it
- * is hosted by Apple — so it can never 404 the way our own page could.
+ * Apple's standard EULA, incorporated by the app-specific terms bundled in
+ * LegalTermsModal.
  */
-export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+export const APPLE_STANDARD_EULA_URL =
+  'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 
 /**
  * Published on the project's Google Site. Percent-encoded because the page

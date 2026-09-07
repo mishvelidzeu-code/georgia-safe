@@ -7,6 +7,7 @@ import { registerForNotificationsAsync } from './src/lib/notifications';
 import { LanguageProvider } from './src/i18n/LanguageContext';
 import { AuthProvider } from './src/auth/AuthContext';
 import AppEntry from './src/navigation/AppEntry';
+import { LegalTermsProvider } from './src/legal/LegalTermsContext';
 
 // Hold the native splash (the mascot on the dark background, configured in
 // app.json) until the stored language and auth session have been restored —
@@ -31,9 +32,11 @@ export default function App() {
           not covered. */}
       <SafeAreaProvider>
         <LanguageProvider>
-          <AuthProvider>
-            <AppEntry />
-          </AuthProvider>
+          <LegalTermsProvider>
+            <AuthProvider>
+              <AppEntry />
+            </AuthProvider>
+          </LegalTermsProvider>
         </LanguageProvider>
       </SafeAreaProvider>
       <StatusBar style="light" />

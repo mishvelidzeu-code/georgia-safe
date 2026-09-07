@@ -28,8 +28,6 @@ import {
 } from '../lib/storage';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { LanguageCode } from '../i18n/LanguageContext';
-import { startTestLiveActivity, stopTestLiveActivity } from '../lib/liveActivity';
-import CheckInTimer from '../components/CheckInTimer';
 import FakeCallButton from '../components/FakeCallButton';
 import { fetchEmergency } from '../lib/remoteData';
 import type { EmergencyData } from '../lib/remoteData';
@@ -38,12 +36,14 @@ import { usePremium } from '../premium/PremiumContext';
 import { restore, FREE_MESSAGE_LIMIT, PLAN_NAME_KEYS, isAutoRenewing } from '../lib/premium';
 import { MANAGE_SUBSCRIPTIONS_URL, PRIVACY_POLICY_URL, openLegalUrl } from '../lib/legal';
 import { deleteAccount } from '../lib/account';
+import { useLegalTerms } from '../legal/LegalTermsContext';
 
 const LANGUAGES: LanguageCode[] = ['en', 'ka', 'ru'];
 const LANGUAGE_NAMES: Record<LanguageCode, string> = { en: 'English', ka: 'ქართული', ru: 'Русский' };
 
 export default function ProfileScreen() {
   const { t, language, setLanguage } = useLanguage();
+  const { openTerms } = useLegalTerms();
   const { session, signOut, guest, leaveGuest } = useAuth();
 
   const [deleting, setDeleting] = useState(false);
@@ -163,14 +163,6 @@ export default function ProfileScreen() {
     setTimeout(() => setSavedMessageVisible(false), 2000);
   }
 
-  function handleStartLiveActivity() {
-    startTestLiveActivity(t('liveActivity.activeTitle'), t('liveActivity.activeSubtitle'));
-  }
-
-  function handleStopLiveActivity() {
-    stopTestLiveActivity(t('liveActivity.activeTitle'), t('liveActivity.endedSubtitle'));
-  }
-
   return (
     <ScrollView
       style={styles.container}
@@ -237,27 +229,8 @@ export default function ProfileScreen() {
         </Pressable>
       </View>
 
-      <Text style={styles.label}>{t('checkIn.title')}</Text>
-      <CheckInTimer />
-
       <Text style={styles.label}>{t('fakeCall.title')}</Text>
       <FakeCallButton />
-
-      <Text style={styles.label}>{t('liveActivity.testLabel')}</Text>
-      <View style={styles.card}>
-        <Text style={styles.testHint}>{t('liveActivity.testHint')}</Text>
-        <View style={styles.testRow}>
-          <Pressable style={styles.testButton} onPress={handleStartLiveActivity}>
-            <Text style={styles.testButtonText}>{t('liveActivity.start')}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.testButton, styles.testButtonStop]}
-            onPress={handleStopLiveActivity}
-          >
-            <Text style={styles.testButtonText}>{t('liveActivity.stop')}</Text>
-          </Pressable>
-        </View>
-      </View>
 
       <Text style={styles.label}>{t('profile.subscription')}</Text>
       <View style={styles.card}>
@@ -305,6 +278,10 @@ export default function ProfileScreen() {
         <Pressable style={styles.premiumLink} onPress={() => openLegalUrl(PRIVACY_POLICY_URL)}>
           <Ionicons name="shield-checkmark-outline" size={16} color={colors.textMuted} />
           <Text style={styles.premiumRestoreText}>{t('premium.privacy')}</Text>
+        </Pressable>
+        <Pressable style={styles.premiumLink} onPress={openTerms}>
+          <Ionicons name="document-text-outline" size={16} color={colors.textMuted} />
+          <Text style={styles.premiumRestoreText}>{t('premium.terms')}</Text>
         </Pressable>
       </View>
 
@@ -579,31 +556,6 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: colors.background,
     fontSize: 15,
-    fontWeight: '700',
-  },
-  testHint: {
-    color: colors.textMuted,
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  testRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  testButton: {
-    flex: 1,
-    backgroundColor: colors.safe,
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  testButtonStop: {
-    backgroundColor: colors.risk,
-  },
-  testButtonText: {
-    color: colors.background,
-    fontSize: 14,
     fontWeight: '700',
   },
 });

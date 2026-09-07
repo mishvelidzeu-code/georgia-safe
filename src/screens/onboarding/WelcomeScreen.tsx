@@ -4,6 +4,7 @@ import { colors } from '../../theme/colors';
 import { useLanguage } from '../../i18n/LanguageContext';
 import type { LanguageCode } from '../../i18n/LanguageContext';
 import OnboardingEmergencyBar from '../../components/OnboardingEmergencyBar';
+import { useLegalTerms } from '../../legal/LegalTermsContext';
 
 const LANGUAGES: LanguageCode[] = ['en', 'ka', 'ru'];
 const LANGUAGE_SHORT: Record<LanguageCode, string> = { en: 'EN', ka: 'ქარ', ru: 'RUS' };
@@ -16,6 +17,7 @@ type Props = {
 
 export default function WelcomeScreen({ onStart, onLogin, onGuest }: Props) {
   const { t, language, setLanguage } = useLanguage();
+  const { openTerms } = useLegalTerms();
 
   return (
     <View style={styles.container}>
@@ -68,6 +70,9 @@ export default function WelcomeScreen({ onStart, onLogin, onGuest }: Props) {
             <Text style={styles.loginLink}>{t('onboarding.login')}</Text>
           </Pressable>
         </View>
+        <Pressable onPress={openTerms} hitSlop={8}>
+          <Text style={styles.termsLink}>{t('premium.terms')}</Text>
+        </Pressable>
       </View>
 
       <OnboardingEmergencyBar />
@@ -177,5 +182,11 @@ const styles = StyleSheet.create({
     color: colors.safe,
     fontSize: 14,
     fontWeight: '700',
+  },
+  termsLink: {
+    color: colors.textMuted,
+    fontSize: 12,
+    textDecorationLine: 'underline',
+    marginTop: 12,
   },
 });

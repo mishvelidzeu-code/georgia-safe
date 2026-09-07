@@ -28,8 +28,9 @@ import {
   PLAN_ORDER,
 } from '../lib/premium';
 import type { Plan } from '../lib/premium';
-import { PRIVACY_POLICY_URL, TERMS_URL, openLegalUrl } from '../lib/legal';
+import { PRIVACY_POLICY_URL, openLegalUrl } from '../lib/legal';
 import { successFeedback, errorFeedback, tapFeedback } from '../lib/haptics';
+import { useLegalTerms } from '../legal/LegalTermsContext';
 
 /** Features listed on the paywall. Everything else in the app stays free. */
 const FEATURES = [
@@ -82,6 +83,7 @@ function sortPackages(list: PurchasesPackage[]): PurchasesPackage[] {
  */
 export default function PaywallModal() {
   const { t } = useLanguage();
+  const { openTerms } = useLegalTerms();
   const { paywallVisible, hidePaywall, paywallReason, refreshAfterPurchase } = usePremium();
   const { open: openChat } = useGuardianChat();
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
@@ -278,7 +280,7 @@ export default function PaywallModal() {
 
           {/* Both links are mandatory on a screen that sells a subscription. */}
           <View style={styles.links}>
-            <Pressable onPress={() => openLegalUrl(TERMS_URL)}>
+            <Pressable onPress={openTerms}>
               <Text style={styles.linkText}>{t('premium.terms')}</Text>
             </Pressable>
             <Text style={styles.linkSeparator}>·</Text>

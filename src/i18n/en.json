@@ -10,7 +10,8 @@
     "searchCountry": "Search for your country",
     "noEmbassy": "No embassy in Georgia",
     "noResults": "No countries match that search.",
-    "back": "Back"
+    "back": "Back",
+    "close": "Close"
   },
   "review": {
     "rateButton": "Rate this place",
@@ -107,6 +108,7 @@
   },
   "emergency": {
     "call112": "Call 112",
+    "call112Note": "This opens a phone call. Georgia Safe does not send your identity or location to 112.",
     "patrolPolice": "Patrol Police Hotline",
     "healthHotline": "Health Hotline",
     "hospitals": "Hospitals",
@@ -144,29 +146,46 @@
     "decline": "Decline",
     "endCall": "End"
   },
-  "checkIn": {
-    "title": "Check-in Timer",
-    "hint": "Set a timer before heading out. If you don't confirm you're back in time, we'll text your trusted contact with your last known location.",
-    "minutes": "{n} min",
-    "imBack": "I'm back",
-    "autoSentNotice": "Time's up — we texted your trusted contact your last known location.",
-    "notificationTitle": "Check-in time",
-    "notificationBody": "Tap to confirm you're back safe.",
-    "smsBody": "I set a check-in timer and didn't confirm I was back in time. My last known location:",
-    "smsBodyNoLocation": "I set a check-in timer and didn't confirm I was back in time. I couldn't share my location."
-  },
   "sos": {
-    "title": "Emergency",
-    "subtitle": "Choose an action",
+    "title": "Safety actions",
+    "subtitle": "Choose how you want to contact someone.",
     "call112": "Call 112",
-    "smsContact": "SMS Trusted Contact",
+    "call112Note": "Calling 112 opens your phone app. Georgia Safe does not transmit your location to 112 or dispatch emergency services.",
+    "smsContact": "Prepare SMS to Trusted Contact",
+    "smsContactNote": "Messages will open with prepared text and your location when available. Review it and tap Send yourself.",
     "noContactTitle": "No trusted contact",
     "noContactMessage": "Add a trusted contact in your Profile first.",
     "goToProfile": "Go to Profile",
     "smsBody": "I need help. My current location:",
     "smsBodyNoLocation": "I need help. I could not share my location.",
+    "smsSentTitle": "Message sent",
+    "smsSentMessage": "Messages reported that the SMS was sent or scheduled. Georgia Safe cannot confirm delivery or that it was read.",
+    "smsCancelledTitle": "Message not sent",
+    "smsCancelledMessage": "You closed Messages without sending the prepared SMS.",
+    "smsUnknownTitle": "Check Messages",
+    "smsUnknownMessage": "The SMS composer opened, but Georgia Safe cannot verify whether the message was sent.",
     "smsFailedTitle": "Couldn't open SMS",
     "smsFailedMessage": "Sending SMS isn't available on this device."
+  },
+  "legal": {
+    "title": "End User License Agreement",
+    "updated": "Effective: September 6, 2026",
+    "agreementTitle": "Agreement",
+    "agreementBody": "By downloading or using Georgia Safe, you agree to Apple's Standard Licensed Application End User License Agreement, which is incorporated into these terms, and to the additional Georgia Safe terms below.",
+    "servicesTitle": "What Georgia Safe provides",
+    "servicesBody": "Georgia Safe provides travel-safety information, maps, reference phone numbers and user-initiated communication tools. It is an informational aid and communication shortcut.",
+    "emergencyTitle": "Emergency services disclaimer",
+    "emergencyBody": "Georgia Safe is not an emergency service, monitoring service or dispatch centre. The Call 112 button only opens a telephone call on your device. The app does not send your identity or location to 112, does not contact emergency services in the background and cannot guarantee that a call connects or help arrives. In an emergency, contact 112 directly and follow official instructions.",
+    "smsTitle": "Trusted-contact messages",
+    "smsBody": "The trusted-contact action opens your device's Messages composer with the phone number you entered and prepared text. When location permission is granted and a position is available, the text may include a map link. You must review the recipient and message and tap Send yourself. Georgia Safe cannot verify delivery, receipt, reading or a response.",
+    "locationTitle": "Location use",
+    "locationBody": "With your permission, location is used for map context, nearby safety information, optional landmark-arrival alerts and a map link in a trusted-contact SMS. Location may be delayed, inaccurate or unavailable. Georgia Safe does not send your location to 112 or nearby Georgia Safe users.",
+    "reliabilityTitle": "Do not rely on the app alone",
+    "reliabilityBody": "Features can be unavailable because of device settings, permissions, network or cellular coverage, third-party services or operating-system limits. Safety information may change. Do not rely on Georgia Safe as your only way to request help or make urgent safety decisions.",
+    "privacyTitle": "Privacy",
+    "privacyBody": "Use of personal data and location is described in the Privacy Policy. You control system permissions and can revoke location access in device settings.",
+    "acceptance": "If you do not agree to these terms, do not use Georgia Safe.",
+    "standardEula": "Read Apple's Standard EULA"
   },
   "guardian": {
     "fab": "AI Assistant",
@@ -192,15 +211,6 @@
     "autoMessageHighRiskLabel": "High-risk zone",
     "autoMessageQuestion": "It's late — what should I do, and is there a safer route?",
     "autoMessageGeneric": "It's late and I might be in a caution area. What should I do to stay safe?"
-  },
-  "liveActivity": {
-    "testLabel": "Live Activity (test)",
-    "testHint": "Test the lock screen / Dynamic Island widget. Content is temporary.",
-    "start": "Start test",
-    "stop": "Stop test",
-    "activeTitle": "Georgia Safe",
-    "activeSubtitle": "Safety mode active",
-    "endedSubtitle": "Session ended"
   },
   "landmarks": {
     "arrivedTitle": "You are here!",
@@ -235,7 +245,7 @@
     "stepOf": "Step {current} of {total}",
     "next": "Next",
     "back": "Back",
-    "emergencyHint": "In danger right now? You can call for help without finishing this.",
+    "emergencyHint": "In danger? This opens a phone call to 112. Georgia Safe does not send your location to 112.",
     "call112": "Call 112",
     "countryTitle": "Where are you from?",
     "countrySubtitle": "We'll connect you to your country's embassy in Georgia if you ever need it.",

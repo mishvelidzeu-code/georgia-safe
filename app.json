@@ -59,6 +59,8 @@
           "color": "#ef4444"
         }
       ],
+      "expo-font",
+      "expo-asset",
       "expo-image",
       "expo-video",
       "expo-sharing",
@@ -75,7 +77,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Georgia Safe uses your location to show which area you are in, how safe it is right now, and to attach your location to an emergency SOS message.",
+          "locationWhenInUsePermission": "Georgia Safe uses your location to show your area and nearby safety information, and to prepare a location link in an SMS you choose to send to your trusted contact. Georgia Safe does not send your location to 112.",
           "locationAlwaysAndWhenInUsePermission": "Georgia Safe can notify you when you arrive at a landmark and can keep watching for risky areas while the app is closed. Without \"Always\", these arrival alerts will not work; everything else in the app still does.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true

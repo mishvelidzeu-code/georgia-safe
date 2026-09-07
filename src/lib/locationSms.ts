@@ -1,15 +1,20 @@
 import * as Location from 'expo-location';
 import * as SMS from 'expo-sms';
 
-export type SendLocationSmsResult = 'sent' | 'unavailable' | 'failed';
+export type SendLocationSmsResult =
+  | 'sent'
+  | 'cancelled'
+  | 'unknown'
+  | 'unavailable'
+  | 'failed';
 
 /**
  * Best-effort: tries to attach a Google Maps link for the current location
  * to `bodyWithLocationPrefix`, falling back to `bodyNoLocation` if location
  * permission is denied or a fix can't be obtained, then sends the result via
- * the device's SMS composer. Shared by SosButton (manual SOS) and
- * CheckInTimer (automatic "missed check-in" alert) so both use identical
- * location + SMS logic instead of duplicating it.
+ * the device's SMS composer. The user still reviews the prepared message and
+ * explicitly taps Send. "sent" means the system composer reported that the
+ * message was sent or scheduled; it does not prove delivery to the recipient.
  */
 export async function sendLocationSms(
   phone: string,
@@ -32,8 +37,8 @@ export async function sendLocationSms(
   if (!isAvailable) return 'unavailable';
 
   try {
-    await SMS.sendSMSAsync([phone], body);
-    return 'sent';
+    const response = await SMS.sendSMSAsync([phone], body);
+    return response.result;
   } catch {
     return 'failed';
   }
