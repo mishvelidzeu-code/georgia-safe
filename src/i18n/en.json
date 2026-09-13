@@ -121,6 +121,7 @@
   "gettingAround": {
     "title": "Getting Around",
     "recommended": "Recommended",
+    "taxi": "Taxi",
     "open": "Open",
     "estimatedFares": "Estimated Fares (GEL)",
     "tips": "Tips",
@@ -456,7 +457,7 @@
   "premium": {
     "title": "Premium",
     "headlineGuardian": "You've used your free questions. Unlock the assistant for the rest of your trip.",
-    "headlineContribute": "You've used all 50 free map reports. Unlock Premium to add more.",
+    "headlineContribute": "You've used your free map report. Unlock Premium to add more.",
     "headlineGeneral": "Unlock the assistant and place contributions.",
     "featureGuardian": "Unlimited AI assistant — it knows where you are",
     "featureMark": "Mark new places on the map",

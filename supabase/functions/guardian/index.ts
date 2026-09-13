@@ -393,18 +393,24 @@ async function db(path: string, init: RequestInit = {}): Promise<Response> {
 async function checkAccess(req: Request): Promise<{ allowed: boolean; premium: boolean }> {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return { allowed: true, premium: false };
 
+  // Failing open below is only for OUR infrastructure being down. A request
+  // with no session (or a session the auth server rejects) is not that — it
+  // is an unmetered caller, and letting it through would mean unlimited free
+  // Gemini for anyone holding the public anon key. The app itself never gets
+  // here without a session: the chat is account-gated client-side.
   const auth = req.headers.get('Authorization') ?? '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return { allowed: true, premium: false };
+  if (!token) return { allowed: false, premium: false };
 
   try {
     const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${token}` },
     });
+    if (userRes.status === 401 || userRes.status === 403) return { allowed: false, premium: false };
     if (!userRes.ok) return { allowed: true, premium: false };
     const user = (await userRes.json()) as { id?: string };
     const userId = user.id;
-    if (!userId) return { allowed: true, premium: false };
+    if (!userId) return { allowed: false, premium: false };
 
     const entRes = await db(
       `entitlements?user_id=eq.${userId}&select=expires_at&expires_at=gt.${new Date().toISOString()}`,

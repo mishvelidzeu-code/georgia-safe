@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { AppState } from 'react-native';
 import { fetchPremiumStatus, initPurchases, waitForEntitlement } from '../lib/premium';
 import type { PremiumStatus } from '../lib/premium';
 import { FREE_MESSAGE_LIMIT } from '../lib/premium';
@@ -67,6 +68,16 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
       sub?.data.subscription.unsubscribe();
     };
+  }, [refresh]);
+
+  // A pass can run out while the app sits in the background; re-read on every
+  // return to the foreground so the paywall (not a server error) is what the
+  // tourist meets next.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refresh();
+    });
+    return () => sub.remove();
   }, [refresh]);
 
   const refreshAfterPurchase = useCallback(async () => {

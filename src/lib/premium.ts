@@ -197,13 +197,33 @@ export async function fetchPremiumStatus(): Promise<PremiumStatus> {
 }
 
 /**
- * Polls until the webhook has landed, for up to ~10s.
+ * Asks the server to read the user's purchases straight from RevenueCat and
+ * write the entitlement. This is what makes Restore work on a new device, and
+ * what makes a fresh purchase show up without waiting on the webhook. Returns
+ * false when the function isn't deployed/configured — the caller then falls
+ * back to polling for the webhook.
+ */
+export async function syncEntitlement(): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.functions.invoke<{ premium?: boolean }>('sync-entitlement', { body: {} });
+    return !error && data?.premium === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Settles "am I premium now?" after a purchase or restore: first a direct
+ * RevenueCat sync, then — if that isn't available — polling for the webhook
+ * for up to ~10s.
  *
  * The gap between "the store took the money" and "our database says premium"
  * is a webhook round trip. Without this the tourist would pay and still see a
  * paywall, which is the worst possible moment to look broken.
  */
 export async function waitForEntitlement(): Promise<PremiumStatus> {
+  if (await syncEntitlement()) return fetchPremiumStatus();
   let status = await fetchPremiumStatus();
   for (let attempt = 0; attempt < 5 && !status.premium; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 2000));

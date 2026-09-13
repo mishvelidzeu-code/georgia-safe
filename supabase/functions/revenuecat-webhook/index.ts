@@ -133,8 +133,14 @@ Deno.serve(async (req: Request) => {
 
   let expiresAt: string;
   if (mapping.days !== null) {
+    // Passes stack: a second pass bought while one is still running starts
+    // when the current access ends, rather than overwriting it.
     const purchasedAt = event.purchased_at_ms ? new Date(event.purchased_at_ms) : new Date();
-    expiresAt = new Date(purchasedAt.getTime() + mapping.days * 24 * 60 * 60 * 1000).toISOString();
+    const existingRes = await db(`entitlements?user_id=eq.${userId}&select=expires_at`, { method: 'GET' });
+    const existing = existingRes.ok ? ((await existingRes.json()) as { expires_at?: string }[])[0] : undefined;
+    const existingEnd = existing?.expires_at ? new Date(existing.expires_at).getTime() : 0;
+    const start = Math.max(existingEnd, purchasedAt.getTime());
+    expiresAt = new Date(start + mapping.days * 24 * 60 * 60 * 1000).toISOString();
   } else if (event.expiration_at_ms) {
     expiresAt = new Date(event.expiration_at_ms).toISOString();
   } else {

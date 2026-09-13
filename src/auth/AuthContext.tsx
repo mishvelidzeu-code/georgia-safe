@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { signOut as signOutRequest } from '../lib/auth';
+import { logOutPurchases } from '../lib/premium';
 import {
   isGuestMode,
   isOnboardingDone,
@@ -125,6 +126,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    // Detach RevenueCat from this account first, so the next sign-in on this
+    // phone starts clean instead of inheriting the previous user's purchases.
+    await logOutPurchases();
     await signOutRequest();
     // Clearing the local flags too, otherwise the tourist would be signed out
     // but still dropped into the tabs with no way back to the login screen.

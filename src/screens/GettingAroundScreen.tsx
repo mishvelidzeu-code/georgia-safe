@@ -167,7 +167,12 @@ export default function GettingAroundScreen() {
           a tourist taps, before anything else on this screen. */}
       <View style={styles.quickRow}>
         {quickApps.map((app) => (
-          <View key={app.id} style={styles.quickCard}>
+          <Pressable
+            key={app.id}
+            style={({ pressed }) => [styles.quickCard, pressed && styles.quickCardPressed]}
+            onPress={() => openTaxiApp(app.id)}
+            accessibilityRole="button"
+          >
             <Ionicons name="car" size={22} color={colors.text} />
             <Text style={styles.quickCardTitle}>{localizedField(app, 'name', language)}</Text>
             {app.recommended && (
@@ -175,13 +180,10 @@ export default function GettingAroundScreen() {
                 <Text style={styles.recommendedText}>{t('gettingAround.recommended')}</Text>
               </View>
             )}
-            <Pressable
-              style={[styles.openButton, styles.quickOpenButton]}
-              onPress={() => openTaxiApp(app.id)}
-            >
-              <Text style={styles.openButtonText}>{t('gettingAround.open')}</Text>
-            </Pressable>
-          </View>
+            <View style={[styles.openButton, styles.quickOpenButton]}>
+              <Text style={styles.openButtonText}>{t('gettingAround.taxi')}</Text>
+            </View>
+          </Pressable>
         ))}
       </View>
 
@@ -387,6 +389,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
+  quickCardPressed: { opacity: 0.75 },
   quickOpenButton: {
     alignSelf: 'stretch',
   },
