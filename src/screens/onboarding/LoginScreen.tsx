@@ -14,7 +14,7 @@ import {
 import { colors } from '../../theme/colors';
 import { useLanguage } from '../../i18n/LanguageContext';
 import OnboardingEmergencyBar from '../../components/OnboardingEmergencyBar';
-import { MIN_PASSWORD_LENGTH, isValidEmail, signIn } from '../../lib/auth';
+import { MIN_PASSWORD_LENGTH, signIn, signInWithUsername } from '../../lib/auth';
 import type { AuthFailureReason } from '../../lib/auth';
 
 const AUTH_ERROR_KEYS: Record<AuthFailureReason, string> = {
@@ -40,11 +40,13 @@ export default function LoginScreen({ onLoggedIn, onGoToSignUp }: Props) {
   async function handleLogin() {
     Keyboard.dismiss();
     setError(null);
-    if (!isValidEmail(email)) return setError(t('onboarding.errEmail'));
+    if (!email.trim()) return setError(t('onboarding.errRequired'));
     if (!password) return setError(t('onboarding.errRequired'));
 
     setSubmitting(true);
-    const result = await signIn(email, password);
+    const result = email.includes('@')
+      ? await signIn(email, password)
+      : await signInWithUsername(email, password);
     setSubmitting(false);
 
     if (!result.ok) {
@@ -71,7 +73,7 @@ export default function LoginScreen({ onLoggedIn, onGoToSignUp }: Props) {
             style={styles.input}
             value={email}
             onChangeText={setEmail}
-            placeholder={t('onboarding.emailPlaceholder')}
+            placeholder={t('onboarding.loginIdentityPlaceholder')}
             placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"

@@ -1,190 +1,32 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, Text, View } from 'react-native';
-import { Image } from 'expo-image';
+import { ActivityIndicator, Alert, FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { adminStyles as s } from './adminStyles';
 import { useLanguage } from '../../i18n/LanguageContext';
-import {
-  deleteAdminCar,
-  fetchAdminCars,
-  fetchAdminPartners,
-  setCarApproved,
-  setPartnerApproved,
-} from '../../lib/admin';
-import type { AdminPartner, AdminPendingCar } from '../../lib/admin';
+import { createAdminListing, createAdminPartner, deleteAdminListing, fetchAdminListings, fetchAdminPartners, setAdminListingStatus, updateAdminPartner } from '../../lib/admin';
+import type { AdminPartner } from '../../lib/admin';
+import { LISTING_CATEGORIES } from '../../lib/rentals';
+import type { ListingCategory, ListingStatus, PartnerListing } from '../../lib/rentals';
+import ListingLocationPicker from '../ListingLocationPicker';
+import CitySelect from '../CitySelect';
+import * as ImagePicker from 'expo-image-picker';
+import PhotoReorderRow from '../PhotoReorderRow';
+import { MAX_LISTING_PHOTOS } from '../../lib/rentals';
 
-/**
- * The two approval queues that gate the rental marketplace: companies first,
- * then their individual listings. Both are shown here because approving a
- * company is meaningless without seeing what it then tries to publish.
- *
- * A partner can edit an approved car, which a database trigger sends straight
- * back to "waiting" — so this list is the only route to a tourist's screen.
- */
-export default function AdminPartners() {
-  const { t } = useLanguage();
-  const [partners, setPartners] = useState<AdminPartner[]>([]);
-  const [cars, setCars] = useState<AdminPendingCar[]>([]);
-  const [loading, setLoading] = useState(true);
+const emptyPartner={companyName:'',username:'',password:'',email:'',phone:'',whatsapp:'',city:''};
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const [p, c] = await Promise.allSettled([fetchAdminPartners(), fetchAdminCars()]);
-    setPartners(p.status === 'fulfilled' ? p.value : []);
-    setCars(c.status === 'fulfilled' ? c.value : []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const togglePartner = useCallback(
-    async (partner: AdminPartner) => {
-      const ok = await setPartnerApproved(partner.id, !partner.approved);
-      if (!ok) {
-        Alert.alert(t('admin.errorTitle'), t('admin.errorBody'));
-        return;
-      }
-      await load();
-    },
-    [load, t],
-  );
-
-  const toggleCar = useCallback(
-    async (car: AdminPendingCar) => {
-      const ok = await setCarApproved(car.id, !car.approved);
-      if (!ok) {
-        Alert.alert(t('admin.errorTitle'), t('admin.errorBody'));
-        return;
-      }
-      await load();
-    },
-    [load, t],
-  );
-
-  const confirmDeleteCar = useCallback(
-    (car: AdminPendingCar) => {
-      Alert.alert(t('admin.deleteTitle'), `${car.make} ${car.model}`, [
-        { text: t('admin.cancel'), style: 'cancel' },
-        {
-          text: t('admin.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            await deleteAdminCar(car.id);
-            await load();
-          },
-        },
-      ]);
-    },
-    [load, t],
-  );
-
-  if (loading) {
-    return <ActivityIndicator style={{ marginTop: 32 }} color={colors.text} />;
-  }
-
-  return (
-    <FlatList
-      style={s.list}
-      contentContainerStyle={s.listContent}
-      data={cars}
-      keyExtractor={(car) => car.id}
-      onRefresh={load}
-      refreshing={loading}
-      ListHeaderComponent={
-        <View style={{ gap: 12, marginBottom: 4 }}>
-          <Text style={s.cardTitle}>{t('admin.partnerAccounts')}</Text>
-          {partners.length === 0 ? (
-            <Text style={s.cardMeta}>{t('admin.noPartners')}</Text>
-          ) : (
-            partners.map((partner) => (
-              <View key={partner.id} style={s.card}>
-                <Text style={s.cardTitle}>{partner.companyName}</Text>
-                <Text style={s.cardMeta}>
-                  {partner.city} · {partner.phone}
-                </Text>
-                <View
-                  style={[
-                    s.badge,
-                    { backgroundColor: partner.approved ? colors.safe : colors.warning },
-                  ]}
-                >
-                  <Text style={s.badgeText}>
-                    {partner.approved ? t('admin.approved') : t('admin.pending')}
-                  </Text>
-                </View>
-                <Pressable
-                  style={[s.button, partner.approved ? s.buttonNeutral : s.buttonPrimary]}
-                  onPress={() => void togglePartner(partner)}
-                >
-                  <Ionicons
-                    name={partner.approved ? 'arrow-undo' : 'checkmark'}
-                    size={16}
-                    color={colors.white}
-                  />
-                  <Text style={s.buttonText}>
-                    {partner.approved ? t('admin.unapprove') : t('admin.approve')}
-                  </Text>
-                </Pressable>
-              </View>
-            ))
-          )}
-          <Text style={[s.cardTitle, { marginTop: 8 }]}>{t('admin.carListings')}</Text>
-        </View>
-      }
-      ListEmptyComponent={<Text style={s.empty}>{t('admin.noCarListings')}</Text>}
-      renderItem={({ item }) => (
-        <View style={s.card}>
-          {item.photoUrls.length > 0 && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {item.photoUrls.map((url) => (
-                <Image
-                  key={url}
-                  source={{ uri: url }}
-                  style={{ width: 140, height: 100, borderRadius: 8, marginRight: 8 }}
-                  contentFit="cover"
-                />
-              ))}
-            </ScrollView>
-          )}
-          <Text style={s.cardTitle}>
-            {item.make} {item.model}
-          </Text>
-          <Text style={s.cardMeta}>
-            {item.city}
-            {item.pricePerDay !== null ? ` · ${item.pricePerDay}₾` : ''}
-          </Text>
-          {item.description ? <Text style={s.cardBody}>{item.description}</Text> : null}
-          <View
-            style={[s.badge, { backgroundColor: item.approved ? colors.safe : colors.warning }]}
-          >
-            <Text style={s.badgeText}>
-              {item.approved ? t('admin.approved') : t('admin.pending')}
-            </Text>
-          </View>
-          <View style={s.row}>
-            <Pressable
-              style={[s.button, item.approved ? s.buttonNeutral : s.buttonPrimary]}
-              onPress={() => void toggleCar(item)}
-            >
-              <Ionicons
-                name={item.approved ? 'arrow-undo' : 'checkmark'}
-                size={16}
-                color={colors.white}
-              />
-              <Text style={s.buttonText}>
-                {item.approved ? t('admin.unapprove') : t('admin.approve')}
-              </Text>
-            </Pressable>
-            <Pressable style={[s.button, s.buttonDanger]} onPress={() => confirmDeleteCar(item)}>
-              <Ionicons name="trash" size={16} color={colors.white} />
-              <Text style={s.buttonText}>{t('admin.delete')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-    />
-  );
+export default function AdminPartners(){
+  const {t}=useLanguage(); const [partners,setPartners]=useState<AdminPartner[]>([]); const [listings,setListings]=useState<PartnerListing[]>([]); const [loading,setLoading]=useState(true); const [creating,setCreating]=useState(false); const [form,setForm]=useState(emptyPartner); const [created,setCreated]=useState<string|null>(null); const [selected,setSelected]=useState<AdminPartner|null>(null); const [locationPicker,setLocationPicker]=useState(false); const [listingForm,setListingForm]=useState({category:'car_rental' as ListingCategory,title:'',city:'',address:'' as string,latitude:null as number|null,longitude:null as number|null,description:''}); const [listingPhotos,setListingPhotos]=useState<string[]>([]);
+  const load=useCallback(async()=>{setLoading(true);const [p,l]=await Promise.allSettled([fetchAdminPartners(),fetchAdminListings()]);setPartners(p.status==='fulfilled'?p.value:[]);setListings(l.status==='fulfilled'?l.value:[]);setLoading(false);},[]);
+  useEffect(()=>{void load();},[load]);
+  async function create(){if(!form.companyName.trim()||!form.username.trim()||form.password.length<8||!form.phone.trim()||!form.city.trim())return Alert.alert(t('admin.invalidTitle'),t('partnerListings.partnerRequired'));setCreating(true);const result=await createAdminPartner(form);setCreating(false);if(!result.ok)return Alert.alert(t('admin.errorTitle'),result.message||t('admin.errorBody'));setCreated(form.username);setForm(emptyPartner);await load();}
+  async function status(item:PartnerListing,next:ListingStatus){const ok=await setAdminListingStatus(item.id,next,undefined,item.reviewStatus==='pending');if(!ok)Alert.alert(t('admin.errorTitle'),t('admin.errorBody'));await load();}
+  async function addListing(){if(!selected||!listingForm.title.trim()||!listingForm.city.trim())return Alert.alert(t('admin.invalidTitle'),t('partnerListings.required'));if(listingForm.latitude==null||listingForm.longitude==null){setLocationPicker(true);return Alert.alert(t('admin.invalidTitle'),t('partnerListings.locationRequired'));}const ok=await createAdminListing(selected.id,{...listingForm,latitude:listingForm.latitude,longitude:listingForm.longitude,address:listingForm.address||null,photosBase64:listingPhotos});if(!ok)return Alert.alert(t('admin.errorTitle'),t('admin.errorBody'));setListingForm({category:'car_rental',title:'',city:selected.city,address:'',latitude:null,longitude:null,description:''});setListingPhotos([]);await load();}
+  async function pickListingPhotos(){const permission=await ImagePicker.requestMediaLibraryPermissionsAsync();if(!permission.granted)return Alert.alert(t('review.permTitle'),t('review.permLibrary'));const result=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],allowsMultipleSelection:true,selectionLimit:MAX_LISTING_PHOTOS-listingPhotos.length,quality:0.6,base64:true});if(!result.canceled)setListingPhotos((old)=>[...old,...result.assets.map((a)=>a.base64).filter((x):x is string=>!!x)].slice(0,MAX_LISTING_PHOTOS));}
+  if(loading)return <ActivityIndicator style={{marginTop:32}} color={colors.safe}/>;
+  return <><FlatList style={s.list} contentContainerStyle={s.listContent} data={selected?listings.filter((x)=>x.partnerId===selected.id):listings} keyExtractor={(x)=>x.id} onRefresh={load} refreshing={loading}
+    ListHeaderComponent={<View style={{gap:12}}><View style={s.card}><Text style={s.cardTitle}>{t('partnerListings.createPartner')}</Text>{(['companyName','username','password','email','phone','whatsapp'] as const).map((key)=><TextInput key={key} style={s.input} value={form[key]} onChangeText={(v)=>setForm({...form,[key]:v})} secureTextEntry={key==='password'} autoCapitalize="none" placeholder={t(`partnerListings.field.${key}`)} placeholderTextColor={colors.textMuted}/>) }<CitySelect value={form.city||null} onChange={(city)=>setForm({...form,city:city??''})}/><Pressable style={[s.button,s.buttonPrimary]} onPress={create} disabled={creating}><Text style={s.buttonText}>{t('partnerListings.create')}</Text></Pressable>{created&&<Text style={{color:colors.safe}}>{t('partnerListings.created').replace('{username}',created)}</Text>}</View><Text style={s.cardTitle}>{t('admin.partnerAccounts')}</Text>{partners.map((p)=><Pressable key={p.id} style={[s.card,selected?.id===p.id&&{borderColor:colors.safe}]} onPress={()=>{setSelected(p);setListingForm((x)=>({...x,city:p.city}));}}><Text style={s.cardTitle}>{p.companyName}</Text><Text style={s.cardMeta}>@{p.username} · {p.city} · {p.phone}</Text><View style={s.row}><Pressable style={[s.button,p.active?s.buttonNeutral:s.buttonPrimary]} onPress={async()=>{await updateAdminPartner(p.id,{active:!p.active});await load();}}><Text style={s.buttonText}>{p.active?t('partnerListings.disable'):t('partnerListings.activate')}</Text></Pressable></View></Pressable>)}{selected&&<View style={s.card}><Text style={s.cardTitle}>+ {t('partnerListings.addFor')} {selected.companyName}</Text><ScrollView horizontal>{LISTING_CATEGORIES.map((c)=><Pressable key={c} style={[s.chip,listingForm.category===c&&s.chipActive]} onPress={()=>setListingForm({...listingForm,category:c})}><Text style={[s.chipText,listingForm.category===c&&s.chipTextActive]}>{t(`partnerListings.category.${c}`)}</Text></Pressable>)}</ScrollView><TextInput style={s.input} value={listingForm.title} onChangeText={(title)=>setListingForm({...listingForm,title})} placeholder={t('partnerListings.name')} placeholderTextColor={colors.textMuted}/><CitySelect value={listingForm.city||null} onChange={(city)=>setListingForm({...listingForm,city:city??''})}/><Pressable style={[s.button,listingForm.latitude!=null?s.buttonPrimary:s.buttonNeutral,{justifyContent:'flex-start'}]} onPress={()=>setLocationPicker(true)}><Ionicons name={listingForm.latitude!=null?'location':'location-outline'} size={16} color={colors.white}/><Text style={s.buttonText} numberOfLines={1}>{listingForm.latitude!=null?(listingForm.address||`${listingForm.latitude.toFixed(5)}, ${listingForm.longitude?.toFixed(5)}`):t('partnerListings.chooseOnMap')}</Text></Pressable><TextInput style={s.input} value={listingForm.description} onChangeText={(description)=>setListingForm({...listingForm,description})} placeholder={t('rentals.descriptionField')} placeholderTextColor={colors.textMuted}/>{listingPhotos.length>0&&<PhotoReorderRow photos={listingPhotos} uriOf={(b64)=>`data:image/jpeg;base64,${b64}`} onChange={setListingPhotos}/>}<Pressable style={[s.button,s.buttonNeutral,listingPhotos.length>=MAX_LISTING_PHOTOS&&{opacity:0.5}]} disabled={listingPhotos.length>=MAX_LISTING_PHOTOS} onPress={pickListingPhotos}><Ionicons name="image" size={16} color={colors.white}/><Text style={s.buttonText}>{listingPhotos.length?t('rentals.photosOf').replace('{n}',String(listingPhotos.length)).replace('{max}',String(MAX_LISTING_PHOTOS)):t('rentals.addPhotos')}</Text></Pressable><Pressable style={[s.button,s.buttonPrimary]} onPress={addListing}><Text style={s.buttonText}>{t('partnerListings.publish')}</Text></Pressable></View>}<Text style={s.cardTitle}>{t('partnerListings.listings')}</Text></View>}
+    ListEmptyComponent={<Text style={s.empty}>{t('admin.noCarListings')}</Text>}
+    renderItem={({item})=><View style={s.card}><Text style={s.cardTitle}>{item.title}</Text><Text style={s.cardMeta}>{t(`partnerListings.category.${item.category}`)} · {item.city}</Text>{item.description?<Text style={s.cardBody}>{item.description}</Text>:null}<Text style={{color:item.reviewStatus==='pending'?colors.warning:item.status==='published'?colors.safe:item.status==='rejected'?colors.risk:colors.warning}}>{t(`partnerListings.${item.reviewStatus??item.status}`)}</Text><View style={s.row}>{(item.reviewStatus==='pending'||item.status!=='published')&&<Pressable style={[s.button,s.buttonPrimary]} onPress={()=>status(item,'published')}><Text style={s.buttonText}>{t('admin.approve')}</Text></Pressable>}<Pressable style={[s.button,s.buttonNeutral]} onPress={()=>status(item,'hidden')}><Text style={s.buttonText}>{t('partnerListings.hide')}</Text></Pressable><Pressable style={[s.button,s.buttonDanger]} onPress={()=>status(item,'rejected')}><Text style={s.buttonText}>{t('partnerListings.reject')}</Text></Pressable></View><Pressable onPress={()=>Alert.alert(t('admin.deleteTitle'),item.title,[{text:t('admin.cancel'),style:'cancel'},{text:t('admin.delete'),style:'destructive',onPress:async()=>{await deleteAdminListing(item.id);await load();}}])}><Text style={{color:colors.risk}}>{t('admin.delete')}</Text></Pressable></View>}/><ListingLocationPicker visible={locationPicker} city={listingForm.city} initial={listingForm.latitude!=null&&listingForm.longitude!=null?{latitude:listingForm.latitude,longitude:listingForm.longitude}:null} onClose={()=>setLocationPicker(false)} onSelect={(coordinate,address)=>{setListingForm({...listingForm,latitude:coordinate.latitude,longitude:coordinate.longitude,address:address??''});setLocationPicker(false);}}/></>;
 }

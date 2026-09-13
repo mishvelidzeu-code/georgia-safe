@@ -11,14 +11,9 @@ Notifications.setNotificationHandler({
 });
 
 export async function registerForNotificationsAsync(): Promise<boolean> {
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
-
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
-  }
-
+  // Android 13 shows its notification permission dialog only after a channel
+  // exists. Create it first so the safety-warning permission can be granted
+  // reliably on both new and existing installs.
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('default', {
       name: 'default',
@@ -26,6 +21,13 @@ export async function registerForNotificationsAsync(): Promise<boolean> {
     });
   }
 
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
   return finalStatus === 'granted';
 }
 

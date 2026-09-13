@@ -62,6 +62,29 @@ export async function signIn(email: string, password: string): Promise<AuthResul
   }
 }
 
+/** Username login is resolved and verified server-side; internal auth emails
+ * and the service-role key never enter the app bundle. */
+export async function signInWithUsername(username: string, password: string): Promise<AuthResult> {
+  if (!supabase) return { ok: false, reason: 'offline' };
+  try {
+    const { data, error } = await supabase.functions.invoke('partner-login', {
+      body: { username: username.trim().toLowerCase(), password },
+    });
+    if (error || !data?.access_token || !data?.refresh_token) {
+      return { ok: false, reason: 'invalid-credentials' };
+    }
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+    return sessionError
+      ? { ok: false, reason: 'invalid-credentials' }
+      : { ok: true, needsEmailConfirmation: false };
+  } catch {
+    return { ok: false, reason: 'offline' };
+  }
+}
+
 export async function signOut(): Promise<void> {
   if (!supabase) return;
   try {

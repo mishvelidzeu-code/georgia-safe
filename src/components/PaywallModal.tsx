@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { PurchasesPackage } from 'react-native-purchases';
 import { colors } from '../theme/colors';
@@ -50,6 +50,9 @@ const HEADLINE_KEYS: Record<PaywallReason, string> = {
   general: 'premium.headlineGeneral',
 };
 
+/** Used when the inset hook reports 0 (e.g. Android without edge-to-edge). */
+const MIN_TOP_INSET = 24;
+
 const PLAN_DURATION_KEYS: Record<Plan, string> = {
   pass_5d: 'premium.duration5d',
   pass_10d: 'premium.duration10d',
@@ -83,6 +86,7 @@ function sortPackages(list: PurchasesPackage[]): PurchasesPackage[] {
  */
 export default function PaywallModal() {
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
   const { openTerms } = useLegalTerms();
   const { paywallVisible, hidePaywall, paywallReason, refreshAfterPurchase } = usePremium();
   const { open: openChat } = useGuardianChat();
@@ -176,8 +180,11 @@ export default function PaywallModal() {
       onRequestClose={leave}
       onDismiss={handleDismissed}
     >
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.header}>
+      {/* SafeAreaView from safe-area-context does not receive the window
+          insets inside a RN Modal, which left the Back button under the notch.
+          The hook does work here, so the insets are applied by hand. */}
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, MIN_TOP_INSET) + 12 }]}>
           <Pressable
             style={styles.backButton}
             onPress={goBack}
@@ -193,7 +200,9 @@ export default function PaywallModal() {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
+        >
           <Text style={styles.headline}>{headline}</Text>
 
           <View style={styles.features}>
@@ -289,7 +298,7 @@ export default function PaywallModal() {
             </Pressable>
           </View>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
@@ -301,13 +310,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 14,
   },
   title: { color: colors.text, fontSize: 20, fontWeight: '700' },
-  backButton: { flexDirection: 'row', alignItems: 'center', minWidth: 80 },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 96,
+    minHeight: 48,
+    paddingRight: 8,
+  },
   backText: { color: colors.text, fontSize: 16, fontWeight: '600', marginLeft: -2 },
-  headerSpacer: { minWidth: 80 },
-  content: { padding: 16, paddingBottom: 40, gap: 14 },
+  headerSpacer: { minWidth: 96 },
+  content: { padding: 16, gap: 14 },
   headline: { color: colors.text, fontSize: 17, fontWeight: '600', lineHeight: 24 },
   features: { gap: 10, marginTop: 4 },
   featureRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

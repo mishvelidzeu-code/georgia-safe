@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import type { SafePlace, SafePlaceType, Zone } from './remoteData';
-import type { PlaceSubmissionCategory } from './placeSubmissions';
+import type { PlaceSubmissionCategory, PlaceSubmissionKind } from './placeSubmissions';
+import type { ListingCategory, ListingStatus, PartnerListing } from './rentals';
+import { uploadListingPhotos } from './rentals';
 
 // Admin panel data layer. Every function here talks to a table that is
 // normally write-only or read-only for tourists — access is granted purely by
@@ -43,47 +45,77 @@ export type AdminSubmission = {
   lng: number;
   photoUrl: string;
   category: PlaceSubmissionCategory;
+  kind: PlaceSubmissionKind;
   approved: boolean;
+  pushToken: string | null;
+  resolvedNotified: boolean;
   rating: number;
   comment: string | null;
   createdAt: string;
+  expiresAt: string | null;
+  resolvedAt: string | null;
+  authorId: string | null;
+  senderName: string | null;
+  senderEmail: string | null;
 };
 
 /**
- * Reads the BASE place_submissions table (not the masked public view), so
- * pending rows show their rating and comment before a decision is made.
- * Newest first — the queue is worked from the top.
+ * Reads a security-definer admin function rather than the public view. It
+ * returns moderation data plus the submitter's registered name/email only
+ * after the database has verified the caller is an administrator.
  */
 export async function fetchAdminSubmissions(): Promise<AdminSubmission[]> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase
-    .from('place_submissions')
-    .select('id, lat, lng, photo_path, category, approved, rating, comment, created_at')
-    .order('created_at', { ascending: false });
+  const { data, error } = await supabase.rpc('admin_list_place_submissions');
   if (error) throw error;
 
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map((row: Record<string, unknown>) => ({
     id: String(row.id),
     lat: Number(row.lat),
     lng: Number(row.lng),
     photoUrl: supabase!.storage.from(SUBMISSION_BUCKET).getPublicUrl(String(row.photo_path)).data
       .publicUrl,
     category: String(row.category) as PlaceSubmissionCategory,
+    kind: row.submission_type === 'positive' ? 'positive' : 'alert',
     approved: Boolean(row.approved),
+    pushToken: row.push_token === null || row.push_token === undefined ? null : String(row.push_token),
+    resolvedNotified: Boolean(row.resolved_notified),
     rating: Number(row.rating),
     comment: row.comment === null || row.comment === undefined ? null : String(row.comment),
     createdAt: String(row.created_at),
+    expiresAt: row.expires_at === null || row.expires_at === undefined ? null : String(row.expires_at),
+    resolvedAt: row.resolved_at === null || row.resolved_at === undefined ? null : String(row.resolved_at),
+    authorId: row.author_id === null || row.author_id === undefined ? null : String(row.author_id),
+    senderName: row.sender_name === null || row.sender_name === undefined ? null : String(row.sender_name),
+    senderEmail: row.sender_email === null || row.sender_email === undefined ? null : String(row.sender_email),
   }));
 }
 
-/**
- * Approves or un-approves a submission. Approving reveals its rating and
- * comment to every tourist through the public view, and lets the existing
- * notify-place-approval function push a notification to the submitter.
- */
-export async function setSubmissionApproved(id: string, approved: boolean): Promise<boolean> {
+/** Edits the public details of a previously approved community report. */
+export async function updateAdminSubmission(
+  id: string,
+  patch: Pick<AdminSubmission, 'category' | 'comment' | 'lat' | 'lng'>,
+): Promise<boolean> {
   if (!supabase) return false;
-  const { error } = await supabase.from('place_submissions').update({ approved }).eq('id', id);
+  const { error } = await supabase.rpc('admin_update_place_submission', {
+    p_submission_id: id,
+    p_category: patch.category,
+    p_comment: patch.comment,
+    p_lat: patch.lat,
+    p_lng: patch.lng,
+  });
+  return !error;
+}
+
+export async function setSubmissionApproved(submissionId: string, approved: boolean): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc(
+    approved ? 'admin_approve_place_submission' : 'admin_resolve_place_submission',
+    { submission_id: submissionId },
+  );
+  // The Database Webhook invokes notify-place-approval on the server. Keeping
+  // delivery there means approval is not dependent on the admin's phone being
+  // online or already updated, and it can safely use the stored device token.
   return !error;
 }
 
@@ -273,6 +305,9 @@ export type AdminPartner = {
   city: string;
   phone: string;
   approved: boolean;
+  active: boolean;
+  username: string | null;
+  whatsapp: string | null;
 };
 
 export type AdminPendingCar = {
@@ -292,7 +327,7 @@ export async function fetchAdminPartners(): Promise<AdminPartner[]> {
   if (!supabase) throw new Error('Supabase not configured');
   const { data, error } = await supabase
     .from('partners')
-    .select('id, company_name, city, phone, approved')
+    .select('id, company_name, city, phone, whatsapp, approved, active, username')
     .order('created_at', { ascending: false });
   if (error) throw error;
 
@@ -303,8 +338,100 @@ export async function fetchAdminPartners(): Promise<AdminPartner[]> {
       city: String(row.city),
       phone: String(row.phone),
       approved: Boolean(row.approved),
+      active: Boolean(row.active),
+      username: row.username ? String(row.username) : null,
+      whatsapp: row.whatsapp ? String(row.whatsapp) : null,
     }))
     .sort((a, b) => Number(a.approved) - Number(b.approved));
+}
+
+export async function createAdminPartner(input: { companyName: string; username: string; password: string; email?: string; phone: string; whatsapp?: string; city: string }): Promise<{ ok: boolean; message?: string }> {
+  if (!supabase) return { ok: false, message: 'Supabase not configured' };
+  const { data, error } = await supabase.functions.invoke('create-partner', { body: input });
+  return error || !data?.ok ? { ok: false, message: data?.error ?? error?.message } : { ok: true };
+}
+
+export async function updateAdminPartner(id: string, patch: Partial<{ company_name: string; city: string; phone: string; whatsapp: string | null; active: boolean }>): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from('partners').update(patch).eq('id', id);
+  return !error;
+}
+
+function adminListing(row: Record<string, any>): PartnerListing {
+  const paths = Array.isArray(row.photo_paths) ? row.photo_paths as string[] : [];
+  return { id: String(row.id), partnerId: String(row.partner_id), category: row.category as ListingCategory,
+    title: String(row.title), city: String(row.city), address: row.address ? String(row.address) : null,
+    phone: row.phone ? String(row.phone) : null, whatsapp: row.whatsapp ? String(row.whatsapp) : null,
+    workingHours: row.working_hours ? String(row.working_hours) : null, priceDescription: row.price_description ? String(row.price_description) : null,
+    description: row.description ? String(row.description) : null, latitude: row.latitude == null ? null : Number(row.latitude),
+    longitude: row.longitude == null ? null : Number(row.longitude), details: row.details ?? {},
+    photoPaths: paths,
+    photoUrls: paths.map((p) => supabase!.storage.from('partner-cars').getPublicUrl(p).data.publicUrl),
+    status: row.status as ListingStatus, rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
+    reviewStatus: row.review_status === 'pending' ? 'pending' : null };
+}
+
+export async function fetchAdminListings(partnerId?: string): Promise<PartnerListing[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  let query = supabase.from('partner_listings').select('*').order('created_at', { ascending: false });
+  if (partnerId) query = query.eq('partner_id', partnerId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []).map(adminListing).sort((a, b) => Number(a.status !== 'pending') - Number(b.status !== 'pending'));
+}
+
+export async function setAdminListingStatus(id: string, status: ListingStatus, rejectionReason?: string, hasPendingChanges = false): Promise<boolean> {
+  if (!supabase) return false;
+  if (status === 'published') {
+    const { error } = await supabase.rpc('admin_approve_listing', { listing_id: id });
+    return !error;
+  }
+  if (status === 'rejected' && hasPendingChanges) {
+    const { error } = await supabase.rpc('admin_reject_listing_changes', { listing_id: id, reason: rejectionReason ?? null });
+    return !error;
+  }
+  const { error } = await supabase.from('partner_listings').update({ status, rejection_reason: rejectionReason?.trim() || null }).eq('id', id);
+  return !error;
+}
+
+export type AdminListingPatch = {
+  title: string;
+  city: string;
+  address: string | null;
+  description: string | null;
+  workingHours: string | null;
+  priceDescription: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  /** Storage paths in display order — the first one is the cover. */
+  photoPaths: string[];
+};
+
+/** Edits a listing's public text fields in place — used from the map's admin sheet. */
+export async function updateAdminListing(id: string, patch: AdminListingPatch): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from('partner_listings').update({
+    title: patch.title, city: patch.city, address: patch.address, description: patch.description,
+    working_hours: patch.workingHours, price_description: patch.priceDescription,
+    phone: patch.phone, whatsapp: patch.whatsapp,
+    latitude: patch.latitude, longitude: patch.longitude, photo_paths: patch.photoPaths,
+  }).eq('id', id);
+  return !error;
+}
+
+export async function deleteAdminListing(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from('partner_listings').delete().eq('id', id);
+  return !error;
+}
+
+export async function createAdminListing(partnerId: string, input: { category: ListingCategory; title: string; city: string; address: string | null; latitude: number; longitude: number; description?: string; photosBase64: string[] }): Promise<boolean> {
+  if (!supabase) return false;
+  const photoPaths = await uploadListingPhotos(partnerId, input.photosBase64);
+  const { error } = await supabase.from('partner_listings').insert({ partner_id: partnerId, category: input.category, title: input.title.trim(), city: input.city.trim(), address: input.address?.trim() || null, latitude: input.latitude, longitude: input.longitude, description: input.description?.trim() || null, photo_paths: photoPaths, status: 'published' });
+  return !error;
 }
 
 export async function setPartnerApproved(id: string, approved: boolean): Promise<boolean> {

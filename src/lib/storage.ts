@@ -178,6 +178,26 @@ export async function setSelectedCountryId(id: string): Promise<void> {
   await AsyncStorage.setItem(SELECTED_COUNTRY_KEY, id);
 }
 
+const SELECTED_RENTAL_CITY_KEY = 'georgia_safe_rental_city';
+
+/** The city chosen on Getting Around's car list; null means "all cities". */
+export async function getSelectedRentalCity(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(SELECTED_RENTAL_CITY_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function setSelectedRentalCity(city: string | null): Promise<void> {
+  try {
+    if (city) await AsyncStorage.setItem(SELECTED_RENTAL_CITY_KEY, city);
+    else await AsyncStorage.removeItem(SELECTED_RENTAL_CITY_KEY);
+  } catch {
+    // Not remembering the filter is harmless.
+  }
+}
+
 export async function getTrustedContact(): Promise<TrustedContact | null> {
   const raw = await AsyncStorage.getItem(TRUSTED_CONTACT_KEY);
   return raw ? (JSON.parse(raw) as TrustedContact) : null;

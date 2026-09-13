@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import type { LongPressEvent, PoiClickEvent } from 'react-native-maps';
+import { useFocusEffect } from '@react-navigation/native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,12 +22,16 @@ import type { ZoneVote } from '../lib/feedback';
 import ReviewModal from '../components/ReviewModal';
 import type { PlaceReviewType } from '../lib/placeReviews';
 import NewPlaceModal from '../components/NewPlaceModal';
+import AdminMapEditModal from '../components/admin/AdminMapEditModal';
+import type { AdminEditTarget } from '../components/admin/AdminMapEditModal';
+import { useAuth } from '../auth/AuthContext';
+import { isAdminEmail } from '../lib/admin';
 import LandmarkMarker from '../components/LandmarkMarker';
 import { fetchPlaceSubmissions } from '../lib/placeSubmissions';
 import { fetchPlacePhotos, photoKey } from '../lib/placePhotos';
 import { usePremium } from '../premium/PremiumContext';
 import type { PlacePhoto } from '../lib/placePhotos';
-import type { PlaceSubmission, PlaceSubmissionCategory } from '../lib/placeSubmissions';
+import type { PlaceSubmission, PlaceSubmissionCategory, PlaceSubmissionKind } from '../lib/placeSubmissions';
 import { currentTimeOfDay, isEveningOrLater } from '../lib/guardianContext';
 import { isInsideGeorgia } from '../lib/geography';
 import { presentEveningZoneNotification } from '../lib/notifications';
@@ -37,7 +42,9 @@ import {
   addVisitedLandmarkId,
   removeVisitedLandmarkId,
 } from '../lib/storage';
-import { initLandmarkGeofencing, refreshLandmarkGeofences } from '../lib/landmarkGeofencing';
+import { initLandmarkGeofencing, refreshLandmarkGeofences, syncCommunityAlertGeofences } from '../lib/landmarkGeofencing';
+import { fetchPublishedPartnerListings } from '../lib/rentals';
+import type { ListingCategory, PartnerListing } from '../lib/rentals';
 
 type LandmarkCategory =
   | 'monument'
@@ -82,6 +89,7 @@ type Selection =
   | { type: 'landmark'; landmark: Landmark }
   | { type: 'place'; place: SafePlace }
   | { type: 'submission'; submission: PlaceSubmission }
+  | { type: 'partnerListing'; listing: PartnerListing }
   | { type: 'poi'; poi: Poi };
 
 const landmarks = landmarksData as Landmark[];
@@ -135,9 +143,13 @@ const CATEGORY_ICONS: Record<LandmarkCategory, keyof typeof Ionicons.glyphMap> =
 // CATEGORY_ICONS — kept separate since the two components' category sets
 // are defined independently in lib/placeSubmissions.ts).
 const SUBMISSION_CATEGORY_ICONS: Record<PlaceSubmissionCategory, keyof typeof Ionicons.glyphMap> = {
+  auto: 'car-sport',
+  taxi: 'car',
   shop: 'storefront',
   restaurant: 'restaurant',
   bar: 'beer',
+  exchange: 'cash',
+  street: 'walk',
   school: 'school',
   atm: 'cash',
   pharmacy: 'medkit',
@@ -145,13 +157,31 @@ const SUBMISSION_CATEGORY_ICONS: Record<PlaceSubmissionCategory, keyof typeof Io
 };
 
 const SUBMISSION_CATEGORY_LABEL_KEYS: Record<PlaceSubmissionCategory, string> = {
+  auto: 'newPlace.categoryAuto',
+  taxi: 'newPlace.categoryTaxi',
   shop: 'newPlace.categoryShop',
   restaurant: 'newPlace.categoryRestaurant',
   bar: 'newPlace.categoryBar',
+  exchange: 'newPlace.categoryExchange',
+  street: 'newPlace.categoryStreet',
   school: 'newPlace.categorySchool',
   atm: 'newPlace.categoryAtm',
   pharmacy: 'newPlace.categoryPharmacy',
   other: 'newPlace.categoryOther',
+};
+
+const SUBMISSION_KIND_COLORS: Record<PlaceSubmissionKind, string> = {
+  positive: colors.safe,
+  alert: colors.risk,
+};
+
+const PARTNER_CATEGORY_ICONS: Record<ListingCategory, keyof typeof Ionicons.glyphMap> = {
+  car_rental: 'car-sport', bar_restaurant: 'restaurant', currency_exchange: 'cash',
+  airport_transfer: 'airplane', hotel: 'bed', tour: 'trail-sign', other: 'ellipsis-horizontal-circle',
+};
+const PARTNER_CATEGORY_COLORS: Record<ListingCategory, string> = {
+  car_rental: '#0ea5e9', bar_restaurant: '#f97316', currency_exchange: '#22c55e',
+  airport_transfer: '#6366f1', hotel: '#a855f7', tour: '#eab308', other: '#64748b',
 };
 
 const LANDMARK_COLOR = '#f59e0b';
@@ -271,7 +301,8 @@ const Z_INDEX = {
   landmark: 2,
   place: 3,
   submission: 4,
-  newPin: 5,
+  partnerListing: 5,
+  newPin: 6,
 } as const;
 
 // A safe place sitting within this distance of a landmark is treated as
@@ -304,8 +335,14 @@ function findZoneAt(lat: number, lng: number, zones: Zone[]): Zone | null {
 export default function MapScreen() {
   const { t, language } = useLanguage();
   const { premium, freeRemaining, showPaywall } = usePremium();
-  const zones = useRemoteData(zonesData as Zone[], fetchZones);
-  const safePlaces = useRemoteData(safePlacesData as SafePlace[], fetchSafePlaces);
+  const { session } = useAuth();
+  // Display gate only — every write below is re-checked by RLS (see lib/admin.ts).
+  const isAdmin = isAdminEmail(session?.user?.email);
+  // Bumped after an admin edits a zone or safe place, so the map re-fetches
+  // reference data that would otherwise only load once per mount.
+  const [referenceReload, setReferenceReload] = useState(0);
+  const zones = useRemoteData(zonesData as Zone[], fetchZones, referenceReload);
+  const safePlaces = useRemoteData(safePlacesData as SafePlace[], fetchSafePlaces, referenceReload);
   // Blue "you are here" dot on the map. Requesting the permission explicitly
   // (rather than just setting showsUserLocation) is required on Android for
   // the dot to ever appear; on iOS it also triggers the system prompt on
@@ -333,31 +370,50 @@ export default function MapScreen() {
   // opens, not after a per-place round trip. Empty until Supabase answers;
   // sheets simply render without photos in the meantime.
   const [placePhotos, setPlacePhotos] = useState<Record<string, PlacePhoto[]>>({});
-  useEffect(() => {
-    let cancelled = false;
+  const refreshPlacePhotos = useCallback(() => {
     fetchPlacePhotos()
-      .then((map) => {
-        if (!cancelled) setPlacePhotos(map);
-      })
+      .then(setPlacePhotos)
       .catch(() => {
         // Offline — the sheets just show no photos.
       });
-    return () => {
-      cancelled = true;
-    };
   }, []);
+  useEffect(() => {
+    refreshPlacePhotos();
+  }, [refreshPlacePhotos]);
 
   const [submittedPlaces, setSubmittedPlaces] = useState<PlaceSubmission[]>([]);
+  const [partnerListings, setPartnerListings] = useState<PartnerListing[]>([]);
+  const refreshPartnerListings = useCallback(() => {
+    fetchPublishedPartnerListings().then(setPartnerListings).catch(() => setPartnerListings([]));
+  }, []);
   const refreshSubmittedPlaces = useCallback(() => {
     fetchPlaceSubmissions()
-      .then(setSubmittedPlaces)
+      .then((rows) => {
+        setSubmittedPlaces(rows);
+        return syncCommunityAlertGeofences(
+          rows
+            .filter((row) => row.kind === 'alert')
+            .map(({ id, lat, lng, category }) => ({ id, lat, lng, category })),
+        );
+      })
+      .then(() => {
+        if (!locationGranted) return;
+        return Location.getCurrentPositionAsync({})
+          .then((position) => refreshLandmarkGeofences(position.coords.latitude, position.coords.longitude))
+          .catch(() => {});
+      })
       .catch(() => {
         // Offline/unreachable — keep showing whatever was last loaded.
       });
-  }, []);
+  }, [locationGranted]);
   useEffect(() => {
     refreshSubmittedPlaces();
   }, [refreshSubmittedPlaces]);
+  // Re-check community reports whenever the visitor comes back to the map.
+  // This makes an admin-approved red warning visible without requiring an
+  // app restart, and updates the proximity-warning regions at the same time.
+  useFocusEffect(refreshSubmittedPlaces);
+  useFocusEffect(refreshPartnerListings);
   // 6.3: default to Night mode automatically if it's currently night
   // (22:00-05:59, same threshold as guardianContext.ts) — the toggle below
   // still lets the user override it manually either way.
@@ -411,19 +467,17 @@ export default function MapScreen() {
     name: string;
   } | null>(null);
   const [newPlacePin, setNewPlacePin] = useState<{ lat: number; lng: number } | null>(null);
+  const [adminTarget, setAdminTarget] = useState<AdminEditTarget | null>(null);
 
   const handleMapLongPress = useCallback(
     (e: LongPressEvent) => {
-      // Marking a place is premium: it costs storage and it costs the admin a
-      // moderation decision. Blocked here and again by RLS on the insert.
-      if (!premium) {
-        showPaywall('contribute');
-        return;
-      }
+      // Everyone can complete the report form. The submit action checks the
+      // server-side fifty-free-reports allowance and opens Premium only when the
+      // visitor has already used it.
       const { latitude, longitude } = e.nativeEvent.coordinate;
       setNewPlacePin({ lat: latitude, lng: longitude });
     },
-    [premium, showPaywall],
+    [],
   );
 
   // Tap on a POI drawn by Google itself (cafe, hotel, shop). We show the name
@@ -798,14 +852,9 @@ export default function MapScreen() {
             }}
           >
             <View style={styles.pinContainer}>
-              <View
-                style={[
-                  styles.submissionBubble,
-                  !submission.approved && styles.submissionBubblePending,
-                ]}
-              >
+              <View style={[styles.submissionBubble, submission.kind === 'alert' && styles.alertSubmissionBubble, { backgroundColor: SUBMISSION_KIND_COLORS[submission.kind] }]}>
                 <Ionicons
-                  name={SUBMISSION_CATEGORY_ICONS[submission.category]}
+                  name={submission.kind === 'positive' ? 'thumbs-up' : 'warning'}
                   size={13}
                   color={colors.white}
                 />
@@ -814,10 +863,31 @@ export default function MapScreen() {
                 style={[
                   styles.pinArrow,
                   {
-                    borderTopColor: submission.approved ? '#a855f7' : colors.textMuted,
+                    borderTopColor: SUBMISSION_KIND_COLORS[submission.kind],
                   },
                 ]}
               />
+            </View>
+          </Marker>
+        ))}
+
+        {partnerListings.map((listing) => (
+          <Marker
+            key={`partner-${listing.id}`}
+            coordinate={{ latitude: listing.latitude!, longitude: listing.longitude! }}
+            anchor={PIN_ANCHOR}
+            tracksViewChanges={false}
+            zIndex={Z_INDEX.partnerListing}
+            onPress={() => {
+              setSelection({ type: 'partnerListing', listing });
+              bottomSheetRef.current?.expand();
+            }}
+          >
+            <View style={styles.pinContainer}>
+              <View style={[styles.partnerBubble, { backgroundColor: PARTNER_CATEGORY_COLORS[listing.category] }]}>
+                <Ionicons name={PARTNER_CATEGORY_ICONS[listing.category]} size={14} color={colors.white} />
+              </View>
+              <View style={[styles.pinArrow, { borderTopColor: PARTNER_CATEGORY_COLORS[listing.category] }]} />
             </View>
           </Marker>
         ))}
@@ -976,6 +1046,12 @@ export default function MapScreen() {
           contentContainerStyle={styles.sheetContentContainer}
           showsVerticalScrollIndicator={false}
         >
+          {isAdmin && selection && selection.type !== 'poi' && (
+            <Pressable style={styles.adminEditButton} onPress={() => setAdminTarget(selection)}>
+              <Ionicons name="create-outline" size={16} color={colors.background} />
+              <Text style={styles.adminEditText}>{t('admin.editOnMap')}</Text>
+            </Pressable>
+          )}
           {selection?.type === 'zone' && selectedZoneTier && selectedZoneScore !== null && (
             <>
               <Text style={styles.sheetTitle}>
@@ -1118,34 +1194,16 @@ export default function MapScreen() {
               />
               <View style={styles.submissionCategoryRow}>
                 <Ionicons
-                  name={SUBMISSION_CATEGORY_ICONS[selection.submission.category]}
+                  name={selection.submission.kind === 'positive' ? 'thumbs-up' : 'warning'}
                   size={14}
-                  color={colors.textMuted}
+                  color={SUBMISSION_KIND_COLORS[selection.submission.kind]}
                 />
                 <Text style={styles.submissionCategoryText}>
-                  {t(SUBMISSION_CATEGORY_LABEL_KEYS[selection.submission.category])}
+                  {t(selection.submission.kind === 'positive' ? 'newPlace.positiveType' : 'newPlace.alertType')} · {t(SUBMISSION_CATEGORY_LABEL_KEYS[selection.submission.category])}
                 </Text>
               </View>
-              {selection.submission.approved ? (
-                <>
-                  <View style={styles.stars}>
-                    {[1, 2, 3, 4, 5].map((n) => (
-                      <Ionicons
-                        key={n}
-                        name={
-                          n <= (selection.submission.rating ?? 0) ? 'star' : 'star-outline'
-                        }
-                        size={18}
-                        color="#f59e0b"
-                      />
-                    ))}
-                  </View>
-                  {selection.submission.comment && (
-                    <Text style={styles.landmarkDescription}>{selection.submission.comment}</Text>
-                  )}
-                </>
-              ) : (
-                <Text style={styles.pendingNote}>{t('newPlace.pending')}</Text>
+              {selection.submission.comment && (
+                <Text style={styles.landmarkDescription}>{selection.submission.comment}</Text>
               )}
               <Pressable
                 style={styles.directionsButton}
@@ -1156,6 +1214,30 @@ export default function MapScreen() {
                 <Ionicons name="navigate" size={18} color={colors.background} />
                 <Text style={styles.directionsText}>{t('map.getDirections')}</Text>
               </Pressable>
+            </>
+          )}
+
+          {selection?.type === 'partnerListing' && (
+            <>
+              <View style={styles.submissionCategoryRow}>
+                <Ionicons name={PARTNER_CATEGORY_ICONS[selection.listing.category]} size={16} color={PARTNER_CATEGORY_COLORS[selection.listing.category]} />
+                <Text style={styles.submissionCategoryText}>{t(`partnerListings.category.${selection.listing.category}`)}</Text>
+              </View>
+              <Text style={styles.sheetTitle}>{selection.listing.title}</Text>
+              <Text style={styles.landmarkDescription}>
+                {[selection.listing.companyName, selection.listing.address, selection.listing.city].filter(Boolean).join(' · ')}
+              </Text>
+              {selection.listing.description ? <Text style={styles.landmarkDescription}>{selection.listing.description}</Text> : null}
+              {selection.listing.workingHours ? <Text style={styles.tip}>{selection.listing.workingHours}</Text> : null}
+              {selection.listing.priceDescription ? <Text style={styles.tip}>{selection.listing.priceDescription}</Text> : null}
+              <Pressable style={styles.directionsButton} onPress={() => openDirections(selection.listing.latitude!, selection.listing.longitude!)}>
+                <Ionicons name="navigate" size={18} color={colors.background} />
+                <Text style={styles.directionsText}>{t('map.getDirections')}</Text>
+              </Pressable>
+              {selection.listing.phone ? <Pressable style={styles.reviewButton} onPress={() => Linking.openURL(`tel:${selection.listing.phone!.replace(/\s+/g,'')}`).catch(()=>{})}>
+                <Ionicons name="call" size={18} color={colors.text} />
+                <Text style={styles.reviewButtonText}>{t('common.call')}</Text>
+              </Pressable> : null}
             </>
           )}
 
@@ -1218,8 +1300,28 @@ export default function MapScreen() {
             setNewPlacePin(null);
             refreshSubmittedPlaces();
           }}
+          onLimitReached={() => {
+            setNewPlacePin(null);
+            showPaywall('contribute');
+          }}
         />
       )}
+
+      <AdminMapEditModal
+        target={adminTarget}
+        onClose={() => setAdminTarget(null)}
+        onSaved={() => {
+          // Whatever was edited, the pin under the sheet no longer matches the
+          // database — refresh every layer and drop the selection.
+          setAdminTarget(null);
+          bottomSheetRef.current?.close();
+          setSelection(null);
+          refreshSubmittedPlaces();
+          refreshPartnerListings();
+          setReferenceReload((token) => token + 1);
+        }}
+        onPhotosChanged={refreshPlacePhotos}
+      />
 
       {reviewTarget && (
         <ReviewModal
@@ -1448,6 +1550,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // The warning glyph itself is the recognizable triangle/exclamation mark;
+  // this stronger red plate keeps alert pins distinct from green community
+  // recommendations at a glance.
+  alertSubmissionBubble: {
+    width: 32,
+    height: 32,
+    borderRadius: 7,
+    shadowColor: colors.risk,
+    shadowOpacity: 0.32,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  partnerBubble: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   submissionBubblePending: {
     backgroundColor: colors.textMuted,
   },
@@ -1476,6 +1599,19 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 24,
   },
+  adminEditButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.warning,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  adminEditText: { color: colors.background, fontSize: 13, fontWeight: '700' },
   sheetTitle: {
     color: colors.text,
     fontSize: 20,

@@ -1,9 +1,12 @@
 import { Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import { APPLE_STANDARD_EULA_URL, PRIVACY_POLICY_URL, openLegalUrl } from '../lib/legal';
+
+/** Used when the inset hook reports 0 (e.g. Android without edge-to-edge). */
+const MIN_TOP_INSET = 24;
 
 type Props = {
   visible: boolean;
@@ -28,11 +31,14 @@ const SECTIONS = [
  */
 export default function LegalTermsModal({ visible, onClose }: Props) {
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <View style={styles.header}>
+      {/* Same as PaywallModal: safe-area-context's SafeAreaView gets no insets
+          inside a RN Modal, so they are applied from the hook instead. */}
+      <View style={styles.container}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, MIN_TOP_INSET) + 12 }]}>
           <Pressable
             style={styles.closeButton}
             onPress={onClose}
@@ -46,7 +52,9 @@ export default function LegalTermsModal({ visible, onClose }: Props) {
           <View style={styles.headerSpacer} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 48 }]}
+        >
           <Text style={styles.updated}>{t('legal.updated')}</Text>
 
           {SECTIONS.map((section) => (
@@ -73,7 +81,7 @@ export default function LegalTermsModal({ visible, onClose }: Props) {
             <Text style={styles.linkText}>{t('premium.privacy')}</Text>
           </Pressable>
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
@@ -85,14 +93,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   closeButton: { width: 44, minHeight: 44, justifyContent: 'center' },
   headerSpacer: { width: 44 },
   title: { color: colors.text, fontSize: 18, fontWeight: '700', textAlign: 'center', flex: 1 },
-  content: { padding: 20, paddingBottom: 48 },
+  content: { padding: 20 },
   updated: { color: colors.textMuted, fontSize: 12, marginBottom: 20 },
   section: { marginBottom: 20 },
   sectionTitle: { color: colors.text, fontSize: 17, fontWeight: '700', marginBottom: 7 },

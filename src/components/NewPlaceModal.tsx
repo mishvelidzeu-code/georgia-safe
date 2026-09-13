@@ -26,7 +26,8 @@ import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import { submitPlaceSubmission, PLACE_SUBMISSION_CATEGORIES } from '../lib/placeSubmissions';
-import type { PlaceSubmissionCategory } from '../lib/placeSubmissions';
+import type { PlaceSubmissionCategory, PlaceSubmissionKind } from '../lib/placeSubmissions';
+import { useAccountPrompt } from '../auth/useAccountPrompt';
 
 type Props = {
   visible: boolean;
@@ -34,14 +35,19 @@ type Props = {
   lng: number;
   onClose: () => void;
   onSubmitted: () => void;
+  onLimitReached: () => void;
 };
 
 const MAX_COMMENT = 500;
 
 const CATEGORY_ICONS: Record<PlaceSubmissionCategory, keyof typeof Ionicons.glyphMap> = {
+  auto: 'car-sport',
+  taxi: 'car',
   shop: 'storefront',
   restaurant: 'restaurant',
   bar: 'beer',
+  exchange: 'cash',
+  street: 'walk',
   school: 'school',
   atm: 'cash',
   pharmacy: 'medkit',
@@ -49,26 +55,31 @@ const CATEGORY_ICONS: Record<PlaceSubmissionCategory, keyof typeof Ionicons.glyp
 };
 
 const CATEGORY_LABEL_KEYS: Record<PlaceSubmissionCategory, string> = {
+  auto: 'newPlace.categoryAuto',
+  taxi: 'newPlace.categoryTaxi',
   shop: 'newPlace.categoryShop',
   restaurant: 'newPlace.categoryRestaurant',
   bar: 'newPlace.categoryBar',
+  exchange: 'newPlace.categoryExchange',
+  street: 'newPlace.categoryStreet',
   school: 'newPlace.categorySchool',
   atm: 'newPlace.categoryAtm',
   pharmacy: 'newPlace.categoryPharmacy',
   other: 'newPlace.categoryOther',
 };
 
-export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted }: Props) {
+export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted, onLimitReached }: Props) {
   const { t } = useLanguage();
+  const { requireAccount } = useAccountPrompt();
+  const [kind, setKind] = useState<PlaceSubmissionKind | null>(null);
   const [category, setCategory] = useState<PlaceSubmissionCategory | null>(null);
-  const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [photo, setPhoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const reset = () => {
+    setKind(null);
     setCategory(null);
-    setRating(0);
     setComment('');
     setPhoto(null);
     setSubmitting(false);
@@ -151,6 +162,10 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
   };
 
   const handleSubmit = async () => {
+    if (!kind) {
+      Alert.alert(t('newPlace.needTypeTitle'), t('newPlace.needType'));
+      return;
+    }
     if (!category) {
       Alert.alert(t('newPlace.needCategoryTitle'), t('newPlace.needCategory'));
       return;
@@ -159,25 +174,32 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
       Alert.alert(t('newPlace.needPhotoTitle'), t('newPlace.needPhoto'));
       return;
     }
-    if (rating < 1) {
-      Alert.alert(t('review.needRatingTitle'), t('review.needRating'));
+    if (!comment.trim()) {
+      Alert.alert(t('newPlace.needDescriptionTitle'), t('newPlace.needDescription'));
       return;
     }
+    if (requireAccount()) return;
     setSubmitting(true);
-    const ok = await submitPlaceSubmission({
+    const result = await submitPlaceSubmission({
       lat,
       lng,
       category,
-      rating,
+      kind,
+      // Kept for the legacy column; warning reports do not ask the user to
+      // rate a place because their photo, text and pin are the report itself.
+      rating: 1,
       comment,
       photoBase64: photo.base64 ?? '',
       photoMimeType: photo.mimeType,
     });
     setSubmitting(false);
-    if (ok) {
+    if (result === 'submitted') {
       Alert.alert(t('newPlace.submittedTitle'), t('newPlace.submittedBody'), [
         { text: t('review.close'), onPress: () => { reset(); onSubmitted(); } },
       ]);
+    } else if (result === 'limit_reached') {
+      reset();
+      onLimitReached();
     } else {
       Alert.alert(t('review.errorTitle'), t('review.error'));
     }
@@ -203,7 +225,31 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
             {lat.toFixed(5)}, {lng.toFixed(5)}
           </Text>
 
-          <Text style={styles.sectionLabel}>{t('newPlace.whatIsThis')}</Text>
+          <Text style={styles.sectionLabel}>{t('newPlace.chooseType')}</Text>
+          <View style={styles.typeRow}>
+            <Pressable
+              style={[styles.typeButton, styles.positiveType, kind === 'positive' && styles.typeButtonActive]}
+              onPress={() => setKind('positive')}
+            >
+              <Ionicons name="thumbs-up" size={18} color={colors.safe} />
+              <View style={styles.typeCopy}>
+                <Text style={styles.typeTitle}>{t('newPlace.positiveType')}</Text>
+                <Text style={styles.typeDescription}>{t('newPlace.positiveTypeDescription')}</Text>
+              </View>
+            </Pressable>
+            <Pressable
+              style={[styles.typeButton, styles.alertType, kind === 'alert' && styles.typeButtonActive]}
+              onPress={() => setKind('alert')}
+            >
+              <Ionicons name="warning" size={18} color={colors.risk} />
+              <View style={styles.typeCopy}>
+                <Text style={styles.typeTitle}>{t('newPlace.alertType')}</Text>
+                <Text style={styles.typeDescription}>{t('newPlace.alertTypeDescription')}</Text>
+              </View>
+            </Pressable>
+          </View>
+
+          <Text style={styles.sectionLabel}>{kind === 'positive' ? t('newPlace.whatIsPositive') : t('newPlace.whatIsThis')}</Text>
           <View style={styles.categoryRow}>
             {PLACE_SUBMISSION_CATEGORIES.map((c) => (
               <Pressable
@@ -228,23 +274,11 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
             ))}
           </View>
 
-          <View style={styles.stars}>
-            {[1, 2, 3, 4, 5].map((n) => (
-              <Pressable key={n} onPress={() => setRating(n)} hitSlop={6}>
-                <Ionicons
-                  name={n <= rating ? 'star' : 'star-outline'}
-                  size={36}
-                  color={n <= rating ? '#f59e0b' : colors.textMuted}
-                />
-              </Pressable>
-            ))}
-          </View>
-
           <TextInput
             style={styles.input}
             value={comment}
             onChangeText={(v) => setComment(v.slice(0, MAX_COMMENT))}
-            placeholder={t('review.commentPlaceholder')}
+            placeholder={kind === 'positive' ? t('newPlace.positivePlaceholder') : t('newPlace.warningPlaceholder')}
             placeholderTextColor={colors.textMuted}
             multiline
             returnKeyType="done"
@@ -277,7 +311,7 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
             </View>
           )}
 
-          <Text style={styles.moderationNote}>{t('newPlace.moderationNote')}</Text>
+          <Text style={styles.moderationNote}>{kind === 'positive' ? t('newPlace.positiveModerationNote') : t('newPlace.moderationNote')}</Text>
 
           <Pressable
             style={[styles.submit, submitting && styles.submitDisabled]}
@@ -287,7 +321,7 @@ export default function NewPlaceModal({ visible, lat, lng, onClose, onSubmitted 
             {submitting ? (
               <ActivityIndicator color={colors.background} />
             ) : (
-              <Text style={styles.submitText}>{t('newPlace.submit')}</Text>
+              <Text style={styles.submitText}>{kind === 'positive' ? t('newPlace.positiveSubmit') : t('newPlace.submit')}</Text>
             )}
           </Pressable>
           <Pressable style={styles.cancel} onPress={handleClose} disabled={submitting}>
@@ -311,6 +345,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
+  typeRow: {
+    gap: 8,
+    marginBottom: 16,
+  },
+  typeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 11,
+  },
+  positiveType: { borderColor: `${colors.safe}99`, backgroundColor: `${colors.safe}12` },
+  alertType: { borderColor: `${colors.risk}99`, backgroundColor: `${colors.risk}12` },
+  typeButtonActive: { borderWidth: 2 },
+  typeCopy: { flex: 1 },
+  typeTitle: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  typeDescription: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -385,12 +437,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 2,
     marginBottom: 14,
-  },
-  stars: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    marginBottom: 16,
   },
   input: {
     backgroundColor: colors.background,

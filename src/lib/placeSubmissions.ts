@@ -6,18 +6,30 @@ import { getPushToken } from './pushToken';
 // never gated behind admin approval like rating/comment are. Drives the
 // marker icon on the map (see MapScreen's SUBMISSION_CATEGORY_ICONS).
 export type PlaceSubmissionCategory =
+  | 'auto'
+  | 'taxi'
   | 'shop'
   | 'restaurant'
   | 'bar'
+  | 'exchange'
+  | 'street'
   | 'school'
   | 'atm'
   | 'pharmacy'
   | 'other';
 
+/** A green recommendation belongs on the map; a red alert also belongs in the
+ * Alerts feed and has a short public lifetime. */
+export type PlaceSubmissionKind = 'positive' | 'alert';
+
 export const PLACE_SUBMISSION_CATEGORIES: PlaceSubmissionCategory[] = [
+  'auto',
+  'taxi',
   'shop',
   'restaurant',
   'bar',
+  'exchange',
+  'street',
   'school',
   'atm',
   'pharmacy',
@@ -30,15 +42,19 @@ export type PlaceSubmission = {
   lng: number;
   photoUrl: string;
   category: PlaceSubmissionCategory;
+  kind: PlaceSubmissionKind;
   approved: boolean;
   rating: number | null; // null until an admin approves
   comment: string | null; // null until an admin approves
+  createdAt: string;
+  expiresAt: string | null;
 };
 
 export type PlaceSubmissionInput = {
   lat: number;
   lng: number;
   category: PlaceSubmissionCategory;
+  kind: PlaceSubmissionKind;
   rating: number; // 1-5
   comment?: string;
   photoBase64: string; // required — the pin needs a photo to be worth showing
@@ -52,22 +68,30 @@ function isCategory(value: unknown): value is PlaceSubmissionCategory {
 }
 
 /**
- * A tourist-marked place: pin + photo + category go live on everyone's map
- * immediately (see supabase/migrations/20260724170000_create_place_submissions.sql
- * for the explicit rationale — this is a deliberate, user-requested exception
- * to CLAUDE.md rule 3). The rating/comment stay hidden (null) until an admin
- * approves the submission; the `place_submissions_public` view enforces that
- * masking server-side, so there's nothing for the client to hide on its own.
+ * A tourist-submitted alert starts as private moderation work. The public view
+ * returns it only after admin approval and while it is still active, so a
+ * pending report cannot leak its photo, location, rating, or warning text.
  *
- * Resolves to `false` instead of throwing on any failure — offline, missing
- * config, or a failed photo upload (a photo is required here, unlike
- * placeReviews.ts, since an unmoderated pin with no photo isn't useful).
+ * A signed-in visitor gets up to fifty free reports during the temporary
+ * launch allowance. The database function atomically
+ * claims that use alongside the insert; this result is deliberately distinct
+ * from an ordinary network/upload failure so the UI opens the paywall only
+ * after a definite quota result.
  */
-export async function submitPlaceSubmission(input: PlaceSubmissionInput): Promise<boolean> {
-  if (!supabase) return false;
-  if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) return false;
-  if (!isCategory(input.category)) return false;
-  if (!input.photoBase64) return false;
+export type PlaceSubmissionResult = 'submitted' | 'limit_reached' | 'failed';
+
+export async function submitPlaceSubmission(input: PlaceSubmissionInput): Promise<PlaceSubmissionResult> {
+  if (!supabase) return 'failed';
+  if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) return 'failed';
+  if (!isCategory(input.category)) return 'failed';
+  if (input.kind !== 'positive' && input.kind !== 'alert') return 'failed';
+  if (!input.photoBase64) return 'failed';
+
+  // Check after the visitor has completed the form, not when they long-press
+  // the map. The RPC below repeats the decision atomically before inserting.
+  const { data: allowed, error: allowanceError } = await supabase.rpc('can_create_place_submission');
+  if (allowanceError) return 'failed';
+  if (!allowed) return 'limit_reached';
 
   const mime = input.photoMimeType ?? 'image/jpeg';
   const ext = mime.includes('png') ? 'png' : 'jpg';
@@ -76,30 +100,28 @@ export async function submitPlaceSubmission(input: PlaceSubmissionInput): Promis
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
     .upload(path, decode(input.photoBase64), { contentType: mime, upsert: false });
-  if (uploadError) return false;
+  if (uploadError) return 'failed';
 
   const pushToken = await getPushToken();
   const comment = input.comment?.trim();
 
-  const { error } = await supabase.from('place_submissions').insert({
-    lat: input.lat,
-    lng: input.lng,
-    photo_path: path,
-    category: input.category,
-    rating: input.rating,
-    comment: comment ? comment : null,
-    push_token: pushToken,
+  const { error } = await supabase.rpc('create_place_submission', {
+    p_lat: input.lat,
+    p_lng: input.lng,
+    p_photo_path: path,
+    p_category: input.category,
+    p_submission_type: input.kind,
+    p_rating: input.rating,
+    p_comment: comment ? comment : null,
+    p_push_token: pushToken,
   });
-  return !error;
+  if (error?.message.includes('FREE_PLACE_SUBMISSION_LIMIT_REACHED')) return 'limit_reached';
+  return error ? 'failed' : 'submitted';
 }
 
 /**
- * Reads the public, pre-masked view — approved rows carry their real rating/
- * comment, unapproved rows carry null for both (server-enforced, see the
- * migration's `place_submissions_public` view). `category` is always present
- * (never gated). Throws on failure so useRemoteData's stale-while-revalidate
- * wrapper keeps the previous list instead of clearing it on a transient
- * network blip.
+ * Reads only approved, unresolved alerts whose seven-day public window has
+ * not ended. Filtering is enforced by the database view, never the UI.
  */
 export async function fetchPlaceSubmissions(): Promise<PlaceSubmission[]> {
   if (!supabase) throw new Error('Supabase not configured');
@@ -113,8 +135,11 @@ export async function fetchPlaceSubmissions(): Promise<PlaceSubmission[]> {
     lng: Number(row.lng),
     photoUrl: supabase!.storage.from(BUCKET).getPublicUrl(String(row.photo_path)).data.publicUrl,
     category: isCategory(row.category) ? row.category : 'other',
+    kind: row.submission_type === 'positive' ? 'positive' : 'alert',
     approved: Boolean(row.approved),
     rating: row.rating === null || row.rating === undefined ? null : Number(row.rating),
     comment: row.comment === null || row.comment === undefined ? null : String(row.comment),
+    createdAt: String(row.created_at),
+    expiresAt: row.expires_at === null || row.expires_at === undefined ? null : String(row.expires_at),
   }));
 }

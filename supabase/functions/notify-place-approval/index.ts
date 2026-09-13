@@ -2,16 +2,15 @@
 //
 // Called by a Supabase Database Webhook configured on the `place_submissions`
 // table (UPDATE event) — see gegma.txt 4.5c for the exact Dashboard steps.
-// When a tourist's submitted place (pin + photo + rating, see
-// src/lib/placeSubmissions.ts) is approved by an admin flipping `approved`
-// to true, this function sends the tourist a one-time push notification via
-// Expo's push service, using the anonymous `push_token` stored on that row.
+// When a tourist's submission is approved or later resolved/hidden by an
+// administrator, this function sends the author a one-time push notification
+// via Expo's push service, using the anonymous `push_token` stored on that row.
 //
 // No secrets need to be set manually: Supabase automatically injects
 // SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY into every Edge Function's
 // environment. The service role key is used only to mark the row as
-// `notified = true` afterwards (bypassing RLS, since the base table has no
-// public UPDATE policy) so a re-fired webhook never double-sends.
+// `notified` / `resolved_notified` afterwards (bypassing RLS, since the base
+// table has no public UPDATE policy) so a re-fired webhook never double-sends.
 //
 // Deploy: supabase functions deploy notify-place-approval
 // Manual one-time setup (Dashboard, cannot be done via migration/CLI):
@@ -37,6 +36,9 @@ type PlaceSubmissionRow = {
   id: string;
   approved: boolean;
   notified: boolean;
+  resolved_at: string | null;
+  resolved_notified: boolean;
+  submission_type: 'positive' | 'alert';
   push_token: string | null;
 };
 
@@ -54,25 +56,28 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
-async function sendExpoPush(token: string): Promise<boolean> {
+async function sendExpoPush(token: string, title: string, body: string): Promise<boolean> {
   try {
     const res = await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
         to: token,
-        title: 'თქვენი მონიშნული ადგილი დაემატა!',
-        body: 'ადმინმა დაადასტურა თქვენი შეფასება — გახსენი რუკა და ნახე.',
+        title,
+        body,
         sound: 'default',
+        channelId: 'default',
       }),
     });
-    return res.ok;
+    if (!res.ok) return false;
+    const payload = await res.json().catch(() => null) as { data?: Array<{ status?: string }> } | null;
+    return Boolean(payload?.data?.every((ticket) => ticket.status === 'ok'));
   } catch {
     return false;
   }
 }
 
-async function markNotified(id: string): Promise<void> {
+async function markNotification(id: string, field: 'notified' | 'resolved_notified'): Promise<void> {
   if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return;
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/place_submissions?id=eq.${encodeURIComponent(id)}`, {
@@ -83,7 +88,7 @@ async function markNotified(id: string): Promise<void> {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       },
-      body: JSON.stringify({ notified: true }),
+      body: JSON.stringify({ [field]: true }),
     });
   } catch {
     // Best-effort — a missed flag just risks one duplicate notification on a
@@ -105,17 +110,40 @@ Deno.serve(async (req: Request) => {
   const record = payload.record;
   const oldRecord = payload.old_record;
 
-  // Only act on the specific transition we care about: approved just flipped
-  // false → true, and we haven't already notified this row.
+  // Act only on the two moderation transitions, each once per submission.
   const justApproved = record?.approved === true && oldRecord?.approved === false;
-  if (!record || !justApproved || record.notified) {
+  const justResolved = Boolean(record?.resolved_at) && !oldRecord?.resolved_at;
+  if (!record || (!justApproved && !justResolved)) {
     return jsonResponse({ skipped: true }, 200);
   }
 
-  if (record.push_token) {
-    await sendExpoPush(record.push_token);
+  if (justApproved && !record.notified) {
+    const positive = record.submission_type === 'positive';
+    if (record.push_token) {
+      await sendExpoPush(
+        record.push_token,
+        positive ? 'თქვენი ადგილი რუკაზე გამოქვეყნებულია' : 'თქვენი გაფრთხილება გამოქვეყნებულია',
+        positive
+          ? 'ადმინმა დაადასტურა თქვენი ადგილი. ის უკვე ჩანს რუკაზე მწვანე პინით.'
+          : 'ადმინმა დაადასტურა თქვენი გაფრთხილება. ის უკვე ჩანს რუკაზე და Alerts გვერდზე.',
+      );
+    }
+    await markNotification(record.id, 'notified');
   }
-  await markNotified(record.id);
+
+  if (justResolved && !record.resolved_notified) {
+    const positive = record.submission_type === 'positive';
+    if (record.push_token) {
+      await sendExpoPush(
+        record.push_token,
+        positive ? 'თქვენი რუკის შეტყობინება დამუშავდა' : 'თქვენი გაფრთხილება გადაწყდა',
+        positive
+          ? 'ადმინმა განიხილა თქვენი შეტყობინება და მწვანე მონიშვნა რუკიდან დამალა.'
+          : 'ადმინმა მონიშნა, რომ თქვენ მიერ ატვირთული საკითხი მოგვარებულია.',
+      );
+    }
+    await markNotification(record.id, 'resolved_notified');
+  }
 
   return jsonResponse({ ok: true }, 200);
 });

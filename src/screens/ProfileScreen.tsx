@@ -16,9 +16,6 @@ import emergencyData from '../data/emergency.json';
 import CountryPickerModal from '../components/CountryPickerModal';
 import AdminPanel from '../components/admin/AdminPanel';
 import { isAdminEmail } from '../lib/admin';
-import PartnerDashboard from '../components/PartnerDashboard';
-import { fetchMyPartner } from '../lib/rentals';
-import type { Partner } from '../lib/rentals';
 import { findCountry, countryName } from '../lib/countries';
 import {
   getSelectedCountryId,
@@ -29,6 +26,7 @@ import {
 import { useLanguage } from '../i18n/LanguageContext';
 import type { LanguageCode } from '../i18n/LanguageContext';
 import FakeCallButton from '../components/FakeCallButton';
+import CollapsibleSection from '../components/CollapsibleSection';
 import { fetchEmergency } from '../lib/remoteData';
 import type { EmergencyData } from '../lib/remoteData';
 import { useRemoteData } from '../lib/useRemoteData';
@@ -104,20 +102,14 @@ export default function ProfileScreen() {
   const [selectedCountryId, setSelectedCountryIdState] = useState<string | null>(null);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
-  const [partner, setPartner] = useState<Partner | null>(null);
-  const [partnerVisible, setPartnerVisible] = useState(false);
 
-  // Checked once per sign-in: almost every user is a tourist with no partner
-  // row, and a null result simply hides the section.
+  // The administrator should never have to hunt for a hidden button after
+  // signing in. Opening Profile with the authorised account goes straight to
+  // the panel; server-side RLS remains the real access control.
   useEffect(() => {
-    let cancelled = false;
-    fetchMyPartner().then((found) => {
-      if (!cancelled) setPartner(found);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.user?.id]);
+    if (isAdminEmail(session?.user?.email)) setAdminVisible(true);
+  }, [session?.user?.id, session?.user?.email]);
+
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [savedMessageVisible, setSavedMessageVisible] = useState(false);
@@ -173,7 +165,9 @@ export default function ProfileScreen() {
     >
       <Text style={styles.sectionTitle}>{t('profile.title')}</Text>
 
-      <Text style={styles.label}>{t('profile.language')}</Text>
+      {/* Each setting folds to a one-line header with its current value, so
+          the whole profile reads as a short list until something is tapped. */}
+      <CollapsibleSection title={t('profile.language')} summary={LANGUAGE_NAMES[language]}>
       <View style={styles.languageRow}>
         {LANGUAGES.map((code) => (
           <Pressable
@@ -192,8 +186,12 @@ export default function ProfileScreen() {
           </Pressable>
         ))}
       </View>
+      </CollapsibleSection>
 
-      <Text style={styles.label}>{t('profile.nationality')}</Text>
+      <CollapsibleSection
+        title={t('profile.nationality')}
+        summary={selectedCountry ? countryName(selectedCountry, language) : t('common.selectCountry')}
+      >
       <Pressable style={styles.card} onPress={() => setPickerVisible(true)}>
         <Text style={styles.countryValue}>
           {selectedCountry ? countryName(selectedCountry, language) : t('common.selectCountry')}
@@ -202,8 +200,9 @@ export default function ProfileScreen() {
           <Text style={styles.countryNote}>{t('common.noEmbassy')}</Text>
         )}
       </Pressable>
+      </CollapsibleSection>
 
-      <Text style={styles.label}>{t('profile.trustedContact')}</Text>
+      <CollapsibleSection title={t('profile.trustedContact')} summary={contactName || undefined}>
       <View style={styles.card}>
         <Text style={styles.inputLabel}>{t('profile.name')}</Text>
         <TextInput
@@ -228,11 +227,16 @@ export default function ProfileScreen() {
           </Text>
         </Pressable>
       </View>
+      </CollapsibleSection>
 
-      <Text style={styles.label}>{t('fakeCall.title')}</Text>
-      <FakeCallButton />
+      <CollapsibleSection title={t('fakeCall.title')}>
+        <FakeCallButton />
+      </CollapsibleSection>
 
-      <Text style={styles.label}>{t('profile.subscription')}</Text>
+      <CollapsibleSection
+        title={t('profile.subscription')}
+        summary={premium && entitlement ? t('premium.statusActive') : t('premium.statusFree')}
+      >
       <View style={styles.card}>
         {premium && entitlement ? (
           <>
@@ -284,8 +288,12 @@ export default function ProfileScreen() {
           <Text style={styles.premiumRestoreText}>{t('premium.terms')}</Text>
         </Pressable>
       </View>
+      </CollapsibleSection>
 
-      <Text style={styles.label}>{t('profile.account')}</Text>
+      <CollapsibleSection
+        title={t('profile.account')}
+        summary={guest ? t('guest.profileStatus') : session?.user?.email ?? undefined}
+      >
       {guest ? (
         <View style={styles.card}>
           <Text style={styles.accountEmail}>{t('guest.profileStatus')}</Text>
@@ -302,59 +310,46 @@ export default function ProfileScreen() {
               ? `${t('profile.signedInAs')} ${session.user.email}`
               : t('profile.notSignedIn')}
           </Text>
-          <Pressable style={styles.signOutButton} onPress={confirmSignOut}>
-            <Ionicons name="log-out-outline" size={18} color={colors.risk} />
-            <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
-          </Pressable>
         </View>
       )}
-
-      {/* Rental companies only: appears once the admin has created and
-          approved their partner row. Tourists never have one. */}
-      {partner && (
-        <>
-          <Text style={styles.label}>{t('rentals.dashboard')}</Text>
-          <Pressable style={styles.adminButton} onPress={() => setPartnerVisible(true)}>
-            <Ionicons name="car-sport" size={18} color={colors.white} />
-            <Text style={styles.adminButtonText}>{t('rentals.myCars')}</Text>
-          </Pressable>
-          <PartnerDashboard
-            partner={partner}
-            visible={partnerVisible}
-            onClose={() => setPartnerVisible(false)}
-          />
-        </>
-      )}
+      </CollapsibleSection>
 
       {/* Admin entry point. Hidden for every other account — and the panel's
           own queries are rejected server-side by RLS regardless, so hiding it
           is convenience, not the security boundary. */}
       {isAdminEmail(session?.user?.email) && (
-        <>
-          <Text style={styles.label}>{t('admin.title')}</Text>
+        <CollapsibleSection title={t('admin.title')}>
           <Pressable style={styles.adminButton} onPress={() => setAdminVisible(true)}>
             <Ionicons name="construct" size={18} color={colors.white} />
             <Text style={styles.adminButtonText}>{t('admin.open')}</Text>
           </Pressable>
-        </>
+        </CollapsibleSection>
       )}
 
-      {/* Last thing on the screen, deliberately: irreversible, so it should
-          take a scroll to reach rather than sit next to everyday settings.
-          Hidden in guest mode — there is no account to delete. */}
+      {/* Sign out stays outside the folds — it should never take two taps to
+          find. Deleting is last, deliberately: irreversible, so it should take
+          a scroll to reach. Both hidden in guest mode — there is no account. */}
       {!guest && (
         <>
-          <Pressable
-            style={styles.deleteAccountButton}
-            disabled={deleting}
-            onPress={confirmDeleteAccount}
-          >
-            <Ionicons name="trash-outline" size={16} color={colors.risk} />
-            <Text style={styles.deleteAccountText}>
-              {deleting ? t('profile.deleting') : t('profile.deleteAccount')}
-            </Text>
+          <Pressable style={styles.signOutButton} onPress={confirmSignOut}>
+            <Ionicons name="log-out-outline" size={18} color={colors.risk} />
+            <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
           </Pressable>
-          <Text style={styles.deleteAccountHint}>{t('profile.deleteHint')}</Text>
+
+          <View style={styles.dangerCard}>
+            <Text style={styles.dangerTitle}>{t('profile.deleteAccount')}</Text>
+            <Text style={styles.dangerHint}>{t('profile.deleteHint')}</Text>
+            <Pressable
+              style={[styles.deleteAccountButton, deleting && styles.deleteAccountButtonBusy]}
+              disabled={deleting}
+              onPress={confirmDeleteAccount}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.white} />
+              <Text style={styles.deleteAccountText}>
+                {deleting ? t('profile.deleting') : t('profile.deleteAccount')}
+              </Text>
+            </Pressable>
+          </View>
         </>
       )}
 
@@ -378,6 +373,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 12,
     backgroundColor: colors.safe,
+    marginBottom: 12,
   },
   adminButtonText: {
     color: colors.white,
@@ -401,18 +397,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 20,
   },
-  label: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
   card: {
     backgroundColor: colors.card,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   accountEmail: {
     color: colors.textMuted,
@@ -461,25 +450,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  dangerCard: {
+    borderWidth: 1,
+    borderColor: colors.risk,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 24,
+    gap: 8,
+  },
+  dangerTitle: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  dangerHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
   deleteAccountButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+    backgroundColor: colors.risk,
+    borderRadius: 10,
     paddingVertical: 12,
-    marginTop: 8,
+    marginTop: 4,
   },
+  deleteAccountButtonBusy: { opacity: 0.6 },
   deleteAccountText: {
-    color: colors.risk,
+    color: colors.white,
     fontSize: 14,
-    fontWeight: '600',
-  },
-  deleteAccountHint: {
-    color: colors.textMuted,
-    fontSize: 12,
-    lineHeight: 17,
-    textAlign: 'center',
-    marginBottom: 24,
+    fontWeight: '700',
   },
   signOutButton: {
     flexDirection: 'row',
@@ -489,7 +492,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.risk,
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    marginTop: 4,
   },
   signOutText: {
     color: colors.risk,

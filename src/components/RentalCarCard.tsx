@@ -14,6 +14,7 @@ import { colors } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { RentalCar } from '../lib/rentals';
 import { tapFeedback } from '../lib/haptics';
+import PhotoViewerModal from './PhotoViewerModal';
 
 // Photos fill the card's width so swiping snaps one photo at a time. The card
 // sits inside the screen's 16pt horizontal padding.
@@ -24,23 +25,20 @@ function call(phone: string) {
 }
 
 /**
- * WhatsApp first, SMS if it isn't installed. Deliberately not an in-app chat:
- * a rental enquiry belongs in a thread the tourist keeps after the trip, and
- * building real-time messaging would mean moderation and abuse handling this
- * app has no reason to take on.
+ * Opens WhatsApp on the partner's number with the enquiry already typed, so
+ * the tourist only has to press send. wa.me opens the app when installed and
+ * WhatsApp Web otherwise; SMS with the same text is the fallback if neither
+ * can open. Deliberately not an in-app chat: a rental enquiry belongs in a
+ * thread the tourist keeps after the trip.
  */
-async function message(phone: string) {
+async function messageOnWhatsApp(phone: string, text: string) {
   const digits = phone.replace(/[^\d]/g, '');
-  const whatsapp = `whatsapp://send?phone=${digits}`;
+  const url = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
   try {
-    if (await Linking.canOpenURL(whatsapp)) {
-      await Linking.openURL(whatsapp);
-      return;
-    }
+    await Linking.openURL(url);
   } catch {
-    // Fall through to SMS.
+    Linking.openURL(`sms:${phone.replace(/\s+/g, '')}&body=${encodeURIComponent(text)}`).catch(() => {});
   }
-  Linking.openURL(`sms:${phone.replace(/\s+/g, '')}`).catch(() => {});
 }
 
 /**
@@ -51,8 +49,17 @@ async function message(phone: string) {
 export default function RentalCarCard({ car }: { car: RentalCar }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  // Index of the photo the full-screen viewer opened on; null = closed.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+
+  const openViewer = (index: number) => {
+    if (car.photoUrls.length === 0) return;
+    tapFeedback();
+    setViewerIndex(index);
+  };
 
   const spec = [
+    car.bodyType ? t(`rentals.${car.bodyType}`) : null,
     car.year ? String(car.year) : null,
     car.transmission ? t(`rentals.${car.transmission}`) : null,
     car.seats ? `${car.seats} ${t('rentals.seats')}` : null,
@@ -70,7 +77,15 @@ export default function RentalCarCard({ car }: { car: RentalCar }) {
         }}
       >
         {car.photoUrls[0] ? (
-          <Image source={{ uri: car.photoUrls[0] }} style={styles.thumb} contentFit="cover" />
+          <Pressable onPress={() => openViewer(0)} accessibilityRole="imagebutton">
+            <Image source={{ uri: car.photoUrls[0] }} style={styles.thumb} contentFit="cover" />
+            {car.photoUrls.length > 1 && (
+              <View style={styles.thumbCount}>
+                <Ionicons name="images" size={9} color={colors.white} />
+                <Text style={styles.thumbCountText}>{car.photoUrls.length}</Text>
+              </View>
+            )}
+          </Pressable>
         ) : (
           <View style={[styles.thumb, styles.thumbEmpty]}>
             <Ionicons name="car-sport" size={22} color={colors.textMuted} />
@@ -109,8 +124,10 @@ export default function RentalCarCard({ car }: { car: RentalCar }) {
               showsHorizontalScrollIndicator={false}
               style={styles.gallery}
             >
-              {car.photoUrls.map((url) => (
-                <Image key={url} source={{ uri: url }} style={styles.photo} contentFit="cover" />
+              {car.photoUrls.map((url, i) => (
+                <Pressable key={url} onPress={() => openViewer(i)} accessibilityRole="imagebutton">
+                  <Image source={{ uri: url }} style={styles.photo} contentFit="cover" />
+                </Pressable>
               ))}
             </ScrollView>
           )}
@@ -138,15 +155,25 @@ export default function RentalCarCard({ car }: { car: RentalCar }) {
               style={[styles.actionButton, styles.messageButton]}
               onPress={() => {
                 tapFeedback();
-                void message(car.whatsapp);
+                void messageOnWhatsApp(
+                  car.whatsapp,
+                  t('rentals.whatsappMessage').replace('{title}', `${car.make} ${car.model}`.trim()),
+                );
               }}
             >
-              <Ionicons name="chatbubble-ellipses" size={16} color={colors.white} />
-              <Text style={styles.actionText}>{t('rentals.message')}</Text>
+              <Ionicons name="logo-whatsapp" size={16} color={colors.white} />
+              <Text style={styles.actionText}>WhatsApp</Text>
             </Pressable>
           </View>
         </View>
       )}
+
+      <PhotoViewerModal
+        urls={car.photoUrls}
+        initialIndex={viewerIndex ?? 0}
+        visible={viewerIndex !== null}
+        onClose={() => setViewerIndex(null)}
+      />
     </View>
   );
 }
@@ -165,11 +192,24 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   thumb: {
-    width: 64,
-    height: 48,
+    width: 72,
+    height: 54,
     borderRadius: 8,
     backgroundColor: colors.background,
   },
+  thumbCount: {
+    position: 'absolute',
+    right: 3,
+    bottom: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 999,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  thumbCountText: { color: colors.white, fontSize: 9, fontWeight: '700' },
   thumbEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -247,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.safe,
   },
   messageButton: {
-    backgroundColor: colors.border,
+    backgroundColor: '#25D366',
   },
   actionText: {
     color: colors.white,

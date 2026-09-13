@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 /**
  * Best-effort Expo push token, used only to notify a tourist back when their
@@ -11,6 +12,16 @@ import Constants from 'expo-constants';
  */
 export async function getPushToken(): Promise<string | null> {
   try {
+    // Android 13+ needs a notification channel before requesting an Expo push
+    // token. Without it, some devices return a token that never presents a
+    // visible notification even though Expo accepts the send request.
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'default',
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+    }
+
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== 'granted') {

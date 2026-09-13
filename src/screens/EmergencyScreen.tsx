@@ -16,6 +16,7 @@ import { getSelectedCountryId, setSelectedCountryId } from '../lib/storage';
 import { findCountry, findEmbassy, countryName } from '../lib/countries';
 import CountryPickerModal from '../components/CountryPickerModal';
 import FakeCallButton from '../components/FakeCallButton';
+import CollapsibleSection from '../components/CollapsibleSection';
 import { useLanguage } from '../i18n/LanguageContext';
 import { fetchEmergency } from '../lib/remoteData';
 import type { EmergencyData } from '../lib/remoteData';
@@ -93,9 +94,9 @@ export default function EmergencyScreen() {
         </Pressable>
         <Text style={styles.call112Note}>{t('emergency.call112Note')}</Text>
 
-        <Text style={styles.sectionTitle}>{t('fakeCall.title')}</Text>
-        <FakeCallButton />
-
+        {/* Everything below 112 folds away so the red button is never pushed
+            out of reach; each section opens with one tap. */}
+        <CollapsibleSection title={t('emergency.hotlines')}>
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.rowTitle}>{t('emergency.patrolPolice')}</Text>
@@ -110,8 +111,13 @@ export default function EmergencyScreen() {
             </Pressable>
           </View>
         </View>
+        </CollapsibleSection>
 
-        <Text style={styles.sectionTitle}>{t('emergency.hospitals')}</Text>
+        <CollapsibleSection title={t('fakeCall.title')}>
+          <FakeCallButton />
+        </CollapsibleSection>
+
+        <CollapsibleSection title={t('emergency.hospitals')} summary={String(emergency.hospitals.length)}>
         {emergency.hospitals.map((hospital) => (
           <View key={hospital.id} style={styles.card}>
             <Text style={styles.rowTitle}>{hospital.name_en}</Text>
@@ -133,8 +139,12 @@ export default function EmergencyScreen() {
             </View>
           </View>
         ))}
+        </CollapsibleSection>
 
-        <Text style={styles.sectionTitle}>{t('emergency.myEmbassy')}</Text>
+        <CollapsibleSection
+          title={t('emergency.myEmbassy')}
+          summary={selectedEmbassy ? selectedEmbassy.country_en : selectedCountry ? countryName(selectedCountry, language) : undefined}
+        >
         <View style={styles.card}>
           {selectedEmbassy ? (
             <>
@@ -176,8 +186,9 @@ export default function EmergencyScreen() {
             </Pressable>
           )}
         </View>
+        </CollapsibleSection>
 
-        <Text style={styles.sectionTitle}>{t('emergency.showToLocal')}</Text>
+        <CollapsibleSection title={t('emergency.showToLocal')}>
         <View style={styles.phraseGrid}>
           {PHRASES.map((phrase) => (
             <Pressable
@@ -190,6 +201,7 @@ export default function EmergencyScreen() {
             </Pressable>
           ))}
         </View>
+        </CollapsibleSection>
       </ScrollView>
 
       <CountryPickerModal
@@ -240,13 +252,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: -10,
     marginBottom: 18,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-    marginTop: 8,
   },
   card: {
     backgroundColor: colors.card,
@@ -323,6 +328,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginBottom: 12,
   },
   phraseCard: {
     backgroundColor: colors.card,

@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Linking, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, Pressable } from 'react-native';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import taxiGuide from '../data/taxi_guide.json';
 import rentalsData from '../data/rentals.json';
 import { useLanguage } from '../i18n/LanguageContext';
 import { localizedField } from '../lib/localizeData';
-import { fetchRentalCars } from '../lib/rentals';
-import type { RentalCar } from '../lib/rentals';
-import { getGuardianContext } from '../lib/guardianContext';
+import { BODY_TYPES, fetchRentalCars } from '../lib/rentals';
+import CitySelect from '../components/CitySelect';
+import { getSelectedRentalCity, setSelectedRentalCity } from '../lib/storage';
+import type { BodyType, RentalCar } from '../lib/rentals';
 import RentalCarCard from '../components/RentalCarCard';
 
 // App-based scooter sharing (Scroll, JET, Yandex Go) — opened, not phoned.
@@ -89,36 +90,67 @@ async function openTaxiApp(appId: string) {
 // The two ride-hailing apps a tourist actually needs, shown as quick cards.
 const QUICK_APP_IDS = ['bolt', 'yandex_go'];
 
+const BODY_TYPE_ICONS: Record<BodyType, keyof typeof MaterialCommunityIcons.glyphMap> = {
+  coupe: 'car-sports',
+  sedan: 'car',
+  suv: 'car-lifted-pickup',
+};
+
 export default function GettingAroundScreen() {
   const { t, language } = useLanguage();
   const [refreshing, setRefreshing] = useState(false);
   const [cars, setCars] = useState<RentalCar[]>([]);
   const [city, setCity] = useState<string | null>(null);
+  const [bodyType, setBodyType] = useState<BodyType | null>(null);
+  const [query, setQuery] = useState('');
+
+  // Body type and text search are applied on top of the city filter, locally:
+  // the list is already small once a city is chosen.
+  const visibleCars = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    return cars.filter((car) => {
+      if (bodyType && car.bodyType !== bodyType) return false;
+      if (!needle) return true;
+      return `${car.make} ${car.model} ${car.companyName}`.toLocaleLowerCase().includes(needle);
+    });
+  }, [cars, bodyType, query]);
 
   const quickApps = apps.filter((app) => QUICK_APP_IDS.includes(app.id));
 
-  // Cars are filtered to the city the tourist is actually in — a rental in
-  // Batumi is noise for someone standing in Tbilisi. When the city can't be
-  // determined (permission denied, offline) the filter is dropped and every
-  // approved car is shown, which is better than an empty section.
-  const loadCars = useCallback(async () => {
-    const context = await getGuardianContext({ includeRentals: false });
-    setCity(context.city ?? null);
+  // The tourist picks the city from the fixed list (remembered between
+  // visits) instead of the app guessing it from GPS — the geocoder's localised
+  // spelling never reliably matched what partners typed. "All cities" (null)
+  // drops the filter.
+  const loadCars = useCallback(async (selectedCity: string | null) => {
     try {
-      setCars(await fetchRentalCars(context.city));
+      setCars(await fetchRentalCars(selectedCity ?? undefined));
     } catch {
       setCars([]);
     }
   }, []);
 
   useEffect(() => {
-    void loadCars();
+    let cancelled = false;
+    getSelectedRentalCity().then((saved) => {
+      if (cancelled) return;
+      setCity(saved);
+      void loadCars(saved);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadCars]);
+
+  const changeCity = useCallback((next: string | null) => {
+    setCity(next);
+    void setSelectedRentalCity(next);
+    void loadCars(next);
   }, [loadCars]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    void loadCars().finally(() => setRefreshing(false));
-  }, [loadCars]);
+    void loadCars(city).finally(() => setRefreshing(false));
+  }, [loadCars, city]);
 
   return (
     <ScrollView
@@ -188,13 +220,53 @@ export default function GettingAroundScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>{t('gettingAround.carRental')}</Text>
-      {city ? <Text style={styles.cityLine}>{city}</Text> : null}
-      {cars.length === 0 ? (
+      <CitySelect value={city} onChange={changeCity} allowAll style={styles.citySelect} />
+      <View style={styles.searchRow}>
+        <Ionicons name="search" size={18} color={colors.textMuted} />
+        <TextInput
+          style={styles.searchInput}
+          value={query}
+          onChangeText={setQuery}
+          placeholder={t('rentals.searchCars')}
+          placeholderTextColor={colors.textMuted}
+          autoCorrect={false}
+          autoCapitalize="none"
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
+          <Pressable onPress={() => setQuery('')} hitSlop={8}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </Pressable>
+        )}
+      </View>
+      <View style={styles.bodyTypeRow}>
+        <Pressable
+          style={[styles.bodyTypeChip, bodyType === null && styles.bodyTypeChipActive]}
+          onPress={() => setBodyType(null)}
+        >
+          <Ionicons name="apps" size={18} color={bodyType === null ? colors.background : colors.text} />
+          <Text style={[styles.bodyTypeText, bodyType === null && styles.bodyTypeTextActive]}>{t('rentals.allTypes')}</Text>
+        </Pressable>
+        {BODY_TYPES.map((type) => {
+          const active = bodyType === type;
+          return (
+            <Pressable
+              key={type}
+              style={[styles.bodyTypeChip, active && styles.bodyTypeChipActive]}
+              onPress={() => setBodyType(active ? null : type)}
+            >
+              <MaterialCommunityIcons name={BODY_TYPE_ICONS[type]} size={20} color={active ? colors.background : colors.text} />
+              <Text style={[styles.bodyTypeText, active && styles.bodyTypeTextActive]}>{t(`rentals.${type}`)}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {visibleCars.length === 0 ? (
         <View style={styles.card}>
           <Text style={styles.cardDescription}>{t('gettingAround.carRentalEmpty')}</Text>
         </View>
       ) : (
-        cars.map((car) => <RentalCarCard key={car.id} car={car} />)
+        visibleCars.map((car) => <RentalCarCard key={car.id} car={car} />)
       )}
 
       <Text style={styles.sectionTitle}>{t('gettingAround.estimatedFares')}</Text>
@@ -235,12 +307,34 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
-  cityLine: {
-    color: colors.textMuted,
-    fontSize: 12,
-    marginTop: -6,
-    marginBottom: 8,
+  citySelect: { marginBottom: 10 },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
   },
+  searchInput: { flex: 1, color: colors.text, fontSize: 14, paddingVertical: 10 },
+  bodyTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  bodyTypeChip: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingVertical: 10,
+  },
+  bodyTypeChipActive: { backgroundColor: colors.safe, borderColor: colors.safe },
+  bodyTypeText: { color: colors.text, fontSize: 12, fontWeight: '600' },
+  bodyTypeTextActive: { color: colors.background },
   quickRow: {
     flexDirection: 'row',
     gap: 10,
