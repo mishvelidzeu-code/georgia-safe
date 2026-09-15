@@ -31,6 +31,9 @@ export const MANAGE_SUBSCRIPTIONS_URL =
     ? 'https://apps.apple.com/account/subscriptions'
     : 'https://play.google.com/store/account/subscriptions';
 
+/** Apple's own refund form — the fallback when the in-app refund sheet can't be shown. */
+export const APPLE_REPORT_PROBLEM_URL = 'https://reportaproblem.apple.com/';
+
 /**
  * Opens a link without ever throwing — offline, these simply do nothing,
  * the same convention as every other outbound link in the app.

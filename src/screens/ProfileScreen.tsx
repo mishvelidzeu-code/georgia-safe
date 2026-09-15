@@ -31,8 +31,8 @@ import { fetchEmergency } from '../lib/remoteData';
 import type { EmergencyData } from '../lib/remoteData';
 import { useRemoteData } from '../lib/useRemoteData';
 import { usePremium } from '../premium/PremiumContext';
-import { restore, FREE_MESSAGE_LIMIT, PLAN_NAME_KEYS, isAutoRenewing } from '../lib/premium';
-import { MANAGE_SUBSCRIPTIONS_URL, PRIVACY_POLICY_URL, openLegalUrl } from '../lib/legal';
+import { restore, requestRefund, FREE_MESSAGE_LIMIT, PLAN_NAME_KEYS, isAutoRenewing } from '../lib/premium';
+import { APPLE_REPORT_PROBLEM_URL, MANAGE_SUBSCRIPTIONS_URL, PRIVACY_POLICY_URL, openLegalUrl } from '../lib/legal';
 import { deleteAccount } from '../lib/account';
 import { useLegalTerms } from '../legal/LegalTermsContext';
 
@@ -91,6 +91,29 @@ export default function ProfileScreen() {
 
   // Apple expects a way to restore and to manage a subscription from inside the
   // app, not only from the screen that sold it.
+  // Cancelling a pass means asking Apple for the money back — there is nothing
+  // else to cancel on a one-time purchase. The refund itself is Apple's call.
+  const confirmRefund = useCallback(() => {
+    if (!entitlement) return;
+    Alert.alert(t('premium.refundTitle'), t('premium.refundBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('premium.cancelPlan'),
+        style: 'destructive',
+        onPress: async () => {
+          const outcome = await requestRefund(entitlement.plan);
+          if (outcome === 'sent') Alert.alert(t('premium.refundSentTitle'), t('premium.refundSentBody'));
+          else if (outcome === 'unavailable') {
+            Alert.alert(t('premium.refundUnavailableTitle'), t('premium.refundUnavailableBody'), [
+              { text: t('common.cancel'), style: 'cancel' },
+              { text: 'OK', onPress: () => openLegalUrl(APPLE_REPORT_PROBLEM_URL) },
+            ]);
+          }
+        },
+      },
+    ]);
+  }, [entitlement, t]);
+
   const handleRestore = useCallback(async () => {
     setRestoring(true);
     await restore();
@@ -247,6 +270,10 @@ export default function ProfileScreen() {
                 entitlement.expiresAt.toLocaleDateString(),
               )}`}
             </Text>
+            <Pressable style={styles.upgradeButton} onPress={() => showPaywall('general')}>
+              <Ionicons name="add-circle" size={18} color={colors.white} />
+              <Text style={styles.upgradeButtonText}>{t('premium.extend')}</Text>
+            </Pressable>
             {isAutoRenewing(entitlement.plan) && (
               <Pressable
                 style={styles.premiumLink}
@@ -256,6 +283,10 @@ export default function ProfileScreen() {
                 <Text style={styles.premiumLinkText}>{t('premium.manage')}</Text>
               </Pressable>
             )}
+            <Pressable style={styles.premiumLink} onPress={confirmRefund}>
+              <Ionicons name="close-circle-outline" size={16} color={colors.risk} />
+              <Text style={styles.premiumCancelText}>{t('premium.cancelPlan')}</Text>
+            </Pressable>
           </>
         ) : (
           <>
@@ -439,6 +470,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingVertical: 10,
+  },
+  premiumCancelText: {
+    color: colors.risk,
+    fontSize: 14,
+    fontWeight: '600',
   },
   premiumLinkText: {
     color: colors.text,

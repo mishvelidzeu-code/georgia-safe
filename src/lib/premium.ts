@@ -138,6 +138,28 @@ export async function purchase(pkg: PurchasesPackage): Promise<PurchaseOutcome> 
   }
 }
 
+export type RefundOutcome = 'sent' | 'cancelled' | 'unavailable';
+
+/**
+ * Opens Apple's in-app refund sheet for the plan the tourist currently holds.
+ * Apple decides; if it approves, RevenueCat sends the webhook a REFUND event
+ * and access ends. 'unavailable' means the sheet couldn't be shown (Android,
+ * older iOS, store unreachable) — the caller then points at Apple's website.
+ */
+export async function requestRefund(plan: Plan): Promise<RefundOutcome> {
+  if (!configured || Platform.OS !== 'ios') return 'unavailable';
+  try {
+    const [product] = await Purchases.getProducts([PRODUCT_IDS[plan]]);
+    if (!product) return 'unavailable';
+    const status = await Purchases.beginRefundRequestForProduct(product);
+    if (status === Purchases.REFUND_REQUEST_STATUS.SUCCESS) return 'sent';
+    if (status === Purchases.REFUND_REQUEST_STATUS.USER_CANCELLED) return 'cancelled';
+    return 'unavailable';
+  } catch {
+    return 'unavailable';
+  }
+}
+
 /** Apple requires a visible restore option for previously bought products. */
 export async function restore(): Promise<boolean> {
   if (!configured) return false;
