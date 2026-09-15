@@ -10,49 +10,6 @@ function s(value: unknown): string {
 }
 
 // ---------------------------------------------------------------------------
-// zones
-// ---------------------------------------------------------------------------
-export type ZoneLevel = 'green' | 'yellow' | 'red';
-
-export type Zone = {
-  id: string;
-  name_en: string;
-  name_ka: string;
-  name_ru: string;
-  day_score: number;
-  night_score: number;
-  day_level: ZoneLevel;
-  night_level: ZoneLevel;
-  lat: number;
-  lng: number;
-  tips_en: string[];
-  tips_ka: string[];
-  tips_ru: string[];
-};
-
-export async function fetchZones(): Promise<Zone[]> {
-  if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.from('zones').select('*');
-  if (error) throw error;
-  if (!data || data.length === 0) throw new Error('No zones returned');
-  return data.map((row) => ({
-    id: s(row.id),
-    name_en: s(row.name_en),
-    name_ka: s(row.name_ka),
-    name_ru: s(row.name_ru),
-    day_score: Number(row.day_score),
-    night_score: Number(row.night_score),
-    day_level: row.day_level as ZoneLevel,
-    night_level: row.night_level as ZoneLevel,
-    lat: Number(row.lat),
-    lng: Number(row.lng),
-    tips_en: Array.isArray(row.tips_en) ? (row.tips_en as string[]) : [],
-    tips_ka: Array.isArray(row.tips_ka) ? (row.tips_ka as string[]) : [],
-    tips_ru: Array.isArray(row.tips_ru) ? (row.tips_ru as string[]) : [],
-  }));
-}
-
-// ---------------------------------------------------------------------------
 // scams
 // ---------------------------------------------------------------------------
 export type ScamCategory = 'taxi' | 'bar' | 'exchange' | 'street' | 'shop';

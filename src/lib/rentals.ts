@@ -29,7 +29,7 @@ export type Partner = {
 };
 
 export const LISTING_CATEGORIES = [
-  'car_rental', 'bar_restaurant', 'currency_exchange',
+  'car_rental', 'bar', 'restaurant', 'club', 'currency_exchange',
   'airport_transfer', 'hotel', 'tour', 'other',
 ] as const;
 export type ListingCategory = (typeof LISTING_CATEGORIES)[number];

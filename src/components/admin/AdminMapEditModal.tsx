@@ -5,23 +5,21 @@ import { colors } from '../../theme/colors';
 import { adminStyles as s } from './adminStyles';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { localizedField } from '../../lib/localizeData';
-import type { SafePlace, Zone } from '../../lib/remoteData';
+import type { SafePlace } from '../../lib/remoteData';
 import type { PlaceSubmission } from '../../lib/placeSubmissions';
 import type { PartnerListing } from '../../lib/rentals';
 import AdminSubmissionEditor from './AdminSubmissionEditor';
 import AdminSafePlaceEditor from './AdminSafePlaceEditor';
-import AdminZoneEditor from './AdminZoneEditor';
 import AdminListingEditor from './AdminListingEditor';
 import PlacePhotosEditor from './PlacePhotosEditor';
 
 /** Landmarks ship in the app bundle; only their id and names matter here. */
 type LandmarkRef = { id: string; name_en: string; name_ka: string; name_ru: string };
 
-/** Everything on the map an administrator can tap "Edit" on. Google POIs are excluded — they aren't ours. */
+/** Everything on the map an administrator can tap "Edit" on. Google POIs are excluded — they aren't ours; risk zones have their own editor (RiskZoneModal). */
 export type AdminEditTarget =
   | { type: 'submission'; submission: PlaceSubmission }
   | { type: 'place'; place: SafePlace }
-  | { type: 'zone'; zone: Zone }
   | { type: 'landmark'; landmark: LandmarkRef }
   | { type: 'partnerListing'; listing: PartnerListing };
 
@@ -52,7 +50,6 @@ export default function AdminMapEditModal({ target, onClose, onSaved, onPhotosCh
     switch (target.type) {
       case 'submission': return t(target.submission.kind === 'alert' ? 'admin.alertReport' : 'admin.positiveReport');
       case 'place': return target.place.name;
-      case 'zone': return localizedField(target.zone, 'name', language);
       case 'landmark': return localizedField(target.landmark, 'name', language);
       case 'partnerListing': return target.listing.title;
     }
@@ -77,7 +74,6 @@ export default function AdminMapEditModal({ target, onClose, onSaved, onPhotosCh
         >
           {target?.type === 'submission' && <AdminSubmissionEditor submission={target.submission} onSaved={onSaved} />}
           {target?.type === 'place' && <AdminSafePlaceEditor place={target.place} onSaved={onSaved} onPhotosChanged={onPhotosChanged} />}
-          {target?.type === 'zone' && <AdminZoneEditor zone={target.zone} onSaved={onSaved} />}
           {target?.type === 'partnerListing' && <AdminListingEditor listing={target.listing} onSaved={onSaved} />}
           {target?.type === 'landmark' && (
             <>

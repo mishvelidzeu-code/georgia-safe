@@ -1,12 +1,12 @@
 import * as Location from 'expo-location';
-import zonesData from '../data/zones.json';
 import landmarksData from '../data/landmarks.json';
 import { getVisitedLandmarkIds } from './storage';
+import { findNearestRiskZone, getCachedRiskZones, riskZoneComment } from './riskZones';
+import type { RiskLevel } from './riskZones';
 import { getProfileForGuardian } from './profile';
 import { fetchRentalCars } from './rentals';
 import { isInsideGeorgia } from './geography';
 
-export type ZoneLevel = 'green' | 'yellow' | 'red';
 export type TimeOfDay = 'day' | 'night';
 
 export type GuardianContext = {
@@ -14,8 +14,10 @@ export type GuardianContext = {
   // Zones only exist for Tbilisi districts, so without this Guardian had no
   // idea where someone in Batumi or Kutaisi was and had to ask them.
   city?: string;
-  zoneName?: string;
-  zoneLevel?: ZoneLevel;
+  // The admin-marked risk zone the tourist is inside of, or the closest one
+  // within NEAREST_RISK_ZONE_MAX_M. Read from the map's offline cache, so it
+  // costs no network call and works without one.
+  riskZone?: GuardianRiskZone;
   timeOfDay: TimeOfDay;
   // English names of the landmarks the app actually has pins for near the
   // tourist right now. Sent so Guardian recommends places the user can then
@@ -42,27 +44,26 @@ export type GuardianContext = {
   rentalCars?: string[];
 };
 
-type Zone = {
+export type GuardianRiskZone = {
+  /** Lets the banner look the zone up in the cache for a localized comment. */
   id: string;
-  name_en: string;
-  day_level: ZoneLevel;
-  night_level: ZoneLevel;
-  lat: number;
-  lng: number;
+  level: RiskLevel;
+  /** English comment — the prompt is English; Guardian answers in the app language anyway. */
+  comment: string;
+  /** Metres to the circle's edge; 0 when inside. */
+  distanceM: number;
+  inside: boolean;
 };
 
 type Landmark = { id: string; name_en: string; lat: number; lng: number };
 
-const zones = zonesData as Zone[];
 const landmarks = landmarksData as Landmark[];
 
-// If the tourist is farther than this from every known zone center, we omit
-// zone context entirely rather than attribute them to a misleadingly
-// "nearest" but actually-irrelevant zone. Zones render as 800m circles on
-// the map, so 1.5km ≈ "in or right next to" a zone; the original 5km cap
-// caused a real misattribution bug (a user in then-unmapped Dighomi Massive
-// was told they were "in Didube", ~2km away).
-const NEAREST_ZONE_MAX_KM = 1.5;
+// A risk zone farther than this from the tourist is not worth mentioning:
+// Guardian should warn about the incident down the street, not one across
+// town (the old district model once told a user in Dighomi they were "in
+// Didube", 2km away — the same mistake in a different shape).
+const NEAREST_RISK_ZONE_MAX_M = 1000;
 
 // Landmarks are a day-trip concept, not a "where am I standing" one, so this
 // radius is far wider than the zone one — wide enough to cover day trips from
@@ -150,19 +151,16 @@ async function describeRentalCars(city?: string): Promise<string[]> {
   }
 }
 
-function findNearestZone(lat: number, lng: number): Zone | null {
-  let nearest: Zone | null = null;
-  let nearestDistanceKm = Infinity;
-
-  for (const zone of zones) {
-    const distanceKm = haversineKm(lat, lng, zone.lat, zone.lng);
-    if (distanceKm < nearestDistanceKm) {
-      nearestDistanceKm = distanceKm;
-      nearest = zone;
-    }
-  }
-
-  return nearest && nearestDistanceKm <= NEAREST_ZONE_MAX_KM ? nearest : null;
+async function findRiskZone(lat: number, lng: number): Promise<GuardianRiskZone | undefined> {
+  const nearest = findNearestRiskZone(lat, lng, await getCachedRiskZones(), NEAREST_RISK_ZONE_MAX_M);
+  if (!nearest) return undefined;
+  return {
+    id: nearest.zone.id,
+    level: nearest.zone.level,
+    comment: riskZoneComment(nearest.zone, 'en'),
+    distanceM: nearest.distanceM,
+    inside: nearest.inside,
+  };
 }
 
 /**
@@ -195,9 +193,9 @@ function findNearbyLandmarks(
 }
 
 /**
- * Best-effort context for Guardian: the nearest known zone (if the tourist is
- * within NEAREST_ZONE_MAX_KM and has granted location permission), the
- * landmarks our map has pins for around them, and the current time of day.
+ * Best-effort context for Guardian: the risk zone the tourist is in or next
+ * to (if any, and if they granted location permission), the landmarks our
+ * map has pins for around them, and the current time of day.
  * Never throws — on any failure the location-derived fields are simply
  * omitted and Guardian answers generically instead.
  */
@@ -226,7 +224,6 @@ export async function getGuardianContext(
     const position = await Location.getCurrentPositionAsync({});
     const { latitude, longitude } = position.coords;
 
-    const nearestZone = findNearestZone(latitude, longitude);
     // The city is only looked up inside Georgia. Outside it the reverse
     // geocoder answers with something like "Cupertino", and the server prompt
     // renders that as "currently in Cupertino, Georgia" — a confident lie the
@@ -234,9 +231,10 @@ export async function getGuardianContext(
     // behaviour: it simply doesn't claim to know where they are. It also
     // drops the rental-car city filter, which would otherwise match nothing.
     const insideGeorgia = isInsideGeorgia(latitude, longitude);
-    const [city, visitedIds] = await Promise.all([
+    const [city, visitedIds, riskZone] = await Promise.all([
       insideGeorgia ? findCity(latitude, longitude) : Promise.resolve(undefined),
       getVisitedLandmarkIds().then((ids) => new Set(ids)),
+      findRiskZone(latitude, longitude),
     ]);
     const { unvisited, visited } = findNearbyLandmarks(latitude, longitude, visitedIds);
     const rentalCars = includeRentals ? await describeRentalCars(city) : [];
@@ -246,10 +244,7 @@ export async function getGuardianContext(
       timeOfDay,
       ...profileFields,
       ...(city && { city }),
-      ...(nearestZone && {
-        zoneName: nearestZone.name_en,
-        zoneLevel: timeOfDay === 'night' ? nearestZone.night_level : nearestZone.day_level,
-      }),
+      ...(riskZone && { riskZone }),
       ...(unvisited.length > 0 && { nearbyLandmarks: unvisited }),
       ...(visited.length > 0 && { visitedLandmarks: visited }),
     };

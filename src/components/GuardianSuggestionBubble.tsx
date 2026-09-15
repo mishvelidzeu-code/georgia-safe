@@ -62,9 +62,7 @@ export default function GuardianSuggestionBubble({ navigationRef }: Props) {
     // Only zone/time matter here, and this runs on a timer — no point paying
     // for the rental lookup every few minutes.
     const context = await getGuardianContext({ includeRentals: false });
-    const isNightRisky =
-      context.timeOfDay === 'night' && (context.zoneLevel === 'yellow' || context.zoneLevel === 'red');
-    if (isNightRisky) return; // NightSafetyBanner already owns this moment
+    if (context.riskZone?.inside) return; // NightSafetyBanner already owns this moment
 
     // The mascot is draggable (see DraggableFab), so read where it currently
     // sits and shift the bubble by the same amount — otherwise the speech

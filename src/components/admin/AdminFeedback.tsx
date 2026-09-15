@@ -54,7 +54,7 @@ export default function AdminFeedback() {
           ) : (
             votes.map((vote) => (
               <Text key={vote.zoneId} style={s.cardBody}>
-                {vote.zoneId} — <Text style={{ color: colors.safe }}>▲ {vote.safe}</Text>{' '}
+                {vote.zoneComment} — <Text style={{ color: colors.safe }}>▲ {vote.safe}</Text>{' '}
                 <Text style={{ color: colors.risk }}>▼ {vote.unsafe}</Text>
               </Text>
             ))

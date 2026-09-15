@@ -19,7 +19,7 @@ const MAX_HISTORY = 12;
 /**
  * Calls the "guardian" Supabase Edge Function (v2) with the recent chat
  * history (so Guardian remembers the conversation) plus optional safety
- * context (nearest zone, time of day — see src/lib/guardianContext.ts).
+ * context (risk zone, time of day — see src/lib/guardianContext.ts).
  *
  * Returns the reply text and any places Guardian recommended — each place
  * has a `query` the UI can open in Google Maps as a tappable directions
@@ -50,8 +50,7 @@ export async function askGuardian(
         visitLength: context?.visitLength,
         ageBand: context?.ageBand,
         rentalCars: context?.rentalCars,
-        zoneName: context?.zoneName,
-        zoneLevel: context?.zoneLevel,
+        riskZone: context?.riskZone,
         timeOfDay: context?.timeOfDay,
         nearbyLandmarks: context?.nearbyLandmarks,
         visitedLandmarks: context?.visitedLandmarks,

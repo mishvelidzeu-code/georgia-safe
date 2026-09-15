@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 /**
- * Stale-while-revalidate for reference data (zones, scams, safe places,
+ * Stale-while-revalidate for reference data (scams, safe places,
  * emergency contacts): renders `localData` (the bundled JSON) instantly on
  * mount — so the screen is never blank or spinning — then tries `fetcher`
  * (a Supabase query) once in the background and swaps the state in only if

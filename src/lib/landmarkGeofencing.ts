@@ -11,6 +11,8 @@ import { presentLocalNotification, registerForNotificationsAsync } from './notif
 import { startLandmarkArrivalLiveActivity } from './liveActivity';
 import { addVisitedLandmarkId, getVisitedLandmarkIds } from './storage';
 import type { PlaceSubmissionCategory } from './placeSubmissions';
+import { getCachedRiskZones, riskZoneComment } from './riskZones';
+import type { RiskZone } from './riskZones';
 
 // "You've arrived" geofencing for landmarks (see gegma.txt — labels turn
 // green→small→gray once visited, still tappable). This works even with the
@@ -32,6 +34,8 @@ const LANGUAGE_STORAGE_KEY = 'georgia_safe_language'; // must match LanguageCont
 const COMMUNITY_ALERTS_STORAGE_KEY = 'georgia_safe_active_alert_geofences';
 const COMMUNITY_ALERTS_NOTIFIED_KEY = 'georgia_safe_alert_geofence_notified';
 const COMMUNITY_ALERT_PREFIX = 'community-alert:';
+const RISK_ZONE_PREFIX = 'risk-zone:';
+const RISK_ZONES_NOTIFIED_KEY = 'georgia_safe_risk_zone_notified';
 
 type Landmark = {
   id: string;
@@ -136,6 +140,33 @@ async function notifyForCommunityAlert(alert: CommunityAlertGeofence): Promise<v
   await presentLocalNotification(title, body);
 }
 
+/**
+ * "You are entering a risk zone" — once per zone. Read from the same cache the
+ * map fills (see riskZones.ts), so this works headless and offline; an
+ * expired zone is already filtered out of that cache.
+ */
+async function notifyForRiskZone(zone: RiskZone): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(RISK_ZONES_NOTIFIED_KEY);
+    const previous: unknown = raw ? JSON.parse(raw) : [];
+    const notified = new Set(Array.isArray(previous) ? previous.filter((id): id is string => typeof id === 'string') : []);
+    if (notified.has(zone.id)) return;
+    notified.add(zone.id);
+    await AsyncStorage.setItem(RISK_ZONES_NOTIFIED_KEY, JSON.stringify([...notified]));
+  } catch {
+    // Same reasoning as community alerts: a lost de-duplication bit must not
+    // silence a safety warning.
+  }
+
+  const language = await getCurrentLanguage();
+  const dict = DICTIONARIES[language];
+  const title = zone.level === 'red'
+    ? dict.riskZone?.notifyTitleRed ?? 'Entering a high-risk zone'
+    : dict.riskZone?.notifyTitleOrange ?? 'Entering a caution zone';
+  const comment = riskZoneComment(zone, language);
+  await presentLocalNotification(title, comment || (dict.riskZone?.notifyBodyFallback ?? 'Stay alert here.'));
+}
+
 // Registered once at module load — this file is imported at the app entry
 // point (index.ts) specifically so the task definition runs even on a
 // headless background relaunch, before any React component mounts.
@@ -150,6 +181,13 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
 
   const identifier = region.identifier;
   if (!identifier) return;
+
+  if (identifier.startsWith(RISK_ZONE_PREFIX)) {
+    const zoneId = identifier.slice(RISK_ZONE_PREFIX.length);
+    const zone = (await getCachedRiskZones()).find((item) => item.id === zoneId);
+    if (zone) await notifyForRiskZone(zone);
+    return;
+  }
 
   if (identifier.startsWith(COMMUNITY_ALERT_PREFIX)) {
     const alertId = identifier.slice(COMMUNITY_ALERT_PREFIX.length);
@@ -197,20 +235,38 @@ function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number):
 }
 
 /**
- * Re-registers public safety alerts first, then fills any remaining iOS
- * geofence slots with nearby unvisited landmarks. iOS permits only 20 active
- * regions per app, so a verified red warning always takes precedence over a
- * sightseeing arrival nudge.
+ * Re-registers admin risk zones first (red before orange, nearest first),
+ * then public safety alerts, then fills any remaining iOS geofence slots with
+ * nearby unvisited landmarks. iOS permits only 20 active regions per app, so
+ * a warning always takes precedence over a sightseeing arrival nudge.
  */
 export async function refreshLandmarkGeofences(
   currentLat: number,
   currentLng: number,
 ): Promise<void> {
   try {
+    const riskZones = (await getCachedRiskZones())
+      .map((zone) => ({ zone, d: distanceMeters(currentLat, currentLng, zone.lat, zone.lng) }))
+      .sort((a, b) => {
+        if (a.zone.level !== b.zone.level) return a.zone.level === 'red' ? -1 : 1;
+        return a.d - b.d;
+      })
+      .slice(0, MAX_MONITORED_REGIONS)
+      .map(({ zone }) => ({
+        identifier: `${RISK_ZONE_PREFIX}${zone.id}`,
+        latitude: zone.lat,
+        longitude: zone.lng,
+        // The whole circle, not the 70m arrival radius — the warning is about
+        // the area, and it should fire at its edge.
+        radius: zone.radiusM,
+        notifyOnEnter: true,
+        notifyOnExit: false,
+      }));
+
     const alerts = (await getCommunityAlerts())
       .map((alert) => ({ alert, d: distanceMeters(currentLat, currentLng, alert.lat, alert.lng) }))
       .sort((a, b) => a.d - b.d)
-      .slice(0, MAX_MONITORED_REGIONS)
+      .slice(0, Math.max(0, MAX_MONITORED_REGIONS - riskZones.length))
       .map(({ alert }) => ({
         identifier: `${COMMUNITY_ALERT_PREFIX}${alert.id}`,
         latitude: alert.lat,
@@ -225,7 +281,7 @@ export async function refreshLandmarkGeofences(
       .filter((l) => !visited.has(l.id))
       .map((l) => ({ l, d: distanceMeters(currentLat, currentLng, l.lat, l.lng) }))
       .sort((a, b) => a.d - b.d)
-      .slice(0, Math.max(0, MAX_MONITORED_REGIONS - alerts.length))
+      .slice(0, Math.max(0, MAX_MONITORED_REGIONS - riskZones.length - alerts.length))
       .map(({ l }) => ({
         identifier: l.id,
         latitude: l.lat,
@@ -235,7 +291,7 @@ export async function refreshLandmarkGeofences(
         notifyOnExit: false,
       }));
 
-    const regions = [...alerts, ...nearest];
+    const regions = [...riskZones, ...alerts, ...nearest];
     if (regions.length === 0) {
       await stopLandmarkGeofencing();
       return;

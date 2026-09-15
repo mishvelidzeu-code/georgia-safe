@@ -3,12 +3,11 @@ import { supabase } from './supabase';
 export type ZoneVote = 'safe' | 'unsafe';
 
 /**
- * Anonymous, fire-and-forget zone feedback ("I felt safe/unsafe here").
+ * Anonymous, fire-and-forget risk-zone feedback ("I felt safe/unsafe here").
  * No device id, name, or user id is ever sent — just zone_id + vote (see
- * supabase/migrations/20260724120000_create_feedback_table.sql). The app
- * never reads this back or shows an aggregate score (no Local/Community
- * features — CLAUDE.md rule 3), so callers only need to know whether the
- * submit succeeded, to show a brief confirmation.
+ * supabase/migrations/20260915140000_risk_zones.sql). The app never reads
+ * this back or shows an aggregate score (no Local/Community features —
+ * CLAUDE.md rule 3); only the admin panel sees the tallies.
  *
  * Resolves to `false` instead of throwing when offline, Supabase is
  * unreachable, or misconfigured — voting is a nice-to-have, never something
@@ -16,6 +15,6 @@ export type ZoneVote = 'safe' | 'unsafe';
  */
 export async function submitZoneFeedback(zoneId: string, vote: ZoneVote): Promise<boolean> {
   if (!supabase) return false;
-  const { error } = await supabase.from('feedback').insert({ zone_id: zoneId, vote });
+  const { error } = await supabase.from('zone_feedback').insert({ zone_id: zoneId, vote });
   return !error;
 }

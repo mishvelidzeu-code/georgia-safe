@@ -1,21 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DeviceEventEmitter, Linking, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, DeviceEventEmitter, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import type { LongPressEvent, PoiClickEvent } from 'react-native-maps';
+import type { LongPressEvent, MarkerDragStartEndEvent, PoiClickEvent } from 'react-native-maps';
 import { useFocusEffect } from '@react-navigation/native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
-import zonesData from '../data/zones.json';
+import { MAP_DARK_STYLE } from '../theme/mapDarkStyle';
 import landmarksData from '../data/landmarks.json';
 import safePlacesData from '../data/safe_places.json';
 import { useLanguage } from '../i18n/LanguageContext';
-import { localizedField, localizedList } from '../lib/localizeData';
-import { fetchZones, fetchSafePlaces } from '../lib/remoteData';
-import type { Zone, SafePlace, SafePlaceType } from '../lib/remoteData';
+import { localizedField } from '../lib/localizeData';
+import { fetchSafePlaces } from '../lib/remoteData';
+import type { SafePlace, SafePlaceType } from '../lib/remoteData';
+import { useRiskZones } from '../lib/useRiskZones';
+import { findRiskZoneAt, riskZoneComment, updateRiskZone } from '../lib/riskZones';
+import type { RiskLevel, RiskZone } from '../lib/riskZones';
+import RiskZoneModal from '../components/admin/RiskZoneModal';
+import type { RiskZoneTarget } from '../components/admin/RiskZoneModal';
 import { useRemoteData } from '../lib/useRemoteData';
 import { submitZoneFeedback } from '../lib/feedback';
 import type { ZoneVote } from '../lib/feedback';
@@ -43,7 +48,7 @@ import {
   removeVisitedLandmarkId,
 } from '../lib/storage';
 import { initLandmarkGeofencing, refreshLandmarkGeofences, syncCommunityAlertGeofences } from '../lib/landmarkGeofencing';
-import { fetchPublishedPartnerListings } from '../lib/rentals';
+import { LISTING_CATEGORIES, fetchPublishedPartnerListings } from '../lib/rentals';
 import type { ListingCategory, PartnerListing } from '../lib/rentals';
 
 type LandmarkCategory =
@@ -85,7 +90,7 @@ type Poi = {
 };
 
 type Selection =
-  | { type: 'zone'; zone: Zone }
+  | { type: 'zone'; zone: RiskZone }
   | { type: 'landmark'; landmark: Landmark }
   | { type: 'place'; place: SafePlace }
   | { type: 'submission'; submission: PlaceSubmission }
@@ -94,36 +99,25 @@ type Selection =
 
 const landmarks = landmarksData as Landmark[];
 
-type ZoneTier = 'darkgreen' | 'green' | 'gold' | 'red';
+// Only two things are ever drawn: an orange (caution) or red (high-risk)
+// circle the admin marked. Everything else on the map is unmarked, which the
+// legend explains as "no known warning" — never as "safe".
+const RISK_LEVELS: RiskLevel[] = ['orange', 'red'];
+const RISK_LEVEL_COLORS: Record<RiskLevel, string> = {
+  orange: colors.warning,
+  red: colors.risk,
+};
+const RISK_LEVEL_LABEL_KEYS: Record<RiskLevel, string> = {
+  orange: 'map.riskZoneOrange',
+  red: 'map.riskZoneRed',
+};
 
-// The score is the single source of truth for a zone's map color. User-defined
-// bands: 80-100 dark green, 50-79 light green, 20-49 gold/orange, 0-19 red.
-function scoreToTier(score: number): ZoneTier {
-  if (score >= 80) return 'darkgreen';
-  if (score >= 50) return 'green';
-  if (score >= 20) return 'gold';
-  return 'red';
+// "Active until 15.09 18:30" — short enough for one line in the sheet.
+function formatExpiry(iso: string): string {
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(date.getDate())}.${pad(date.getMonth() + 1)} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
-
-// Four visually distinct bands (explicit hexes so the scale stays unambiguous
-// regardless of the theme's semantic color names).
-const TIER_COLORS: Record<ZoneTier, string> = {
-  darkgreen: '#15803d',
-  green: '#4ade80',
-  gold: '#f59e0b',
-  red: '#ef4444',
-};
-
-// Radius of the circle drawn for every zone, and therefore the catchment used
-// when deciding which zone a tapped basemap POI belongs to.
-const ZONE_RADIUS_M = 800;
-
-const TIER_LABEL_KEYS: Record<ZoneTier, string> = {
-  darkgreen: 'map.levelVerySafe',
-  green: 'map.levelSafe',
-  gold: 'map.levelCaution',
-  red: 'map.levelRisk',
-};
 
 const CATEGORY_ICONS: Record<LandmarkCategory, keyof typeof Ionicons.glyphMap> = {
   monument: 'flag',
@@ -176,13 +170,22 @@ const SUBMISSION_KIND_COLORS: Record<PlaceSubmissionKind, string> = {
 };
 
 const PARTNER_CATEGORY_ICONS: Record<ListingCategory, keyof typeof Ionicons.glyphMap> = {
-  car_rental: 'car-sport', bar_restaurant: 'restaurant', currency_exchange: 'cash',
-  airport_transfer: 'airplane', hotel: 'bed', tour: 'trail-sign', other: 'ellipsis-horizontal-circle',
+  car_rental: 'car-sport', bar: 'beer', restaurant: 'restaurant', club: 'musical-notes',
+  currency_exchange: 'cash', airport_transfer: 'airplane', hotel: 'bed', tour: 'trail-sign',
+  other: 'ellipsis-horizontal-circle',
 };
 const PARTNER_CATEGORY_COLORS: Record<ListingCategory, string> = {
-  car_rental: '#0ea5e9', bar_restaurant: '#f97316', currency_exchange: '#22c55e',
-  airport_transfer: '#6366f1', hotel: '#a855f7', tour: '#eab308', other: '#64748b',
+  car_rental: '#0ea5e9', bar: '#d946ef', restaurant: '#f97316', club: '#ec4899',
+  currency_exchange: '#22c55e', airport_transfer: '#6366f1', hotel: '#a855f7', tour: '#eab308',
+  other: '#64748b',
 };
+
+// Partner categories the layers panel lets the tourist toggle. Tours and
+// airport transfers are deliberately left out (always shown) — they are
+// rare pins and not something you switch off while walking around.
+const PARTNER_LAYER_CATEGORIES: ListingCategory[] = [
+  'car_rental', 'bar', 'restaurant', 'club', 'currency_exchange', 'hotel', 'other',
+];
 
 const LANDMARK_COLOR = '#f59e0b';
 
@@ -317,21 +320,6 @@ const PIN_OVERLAP_M = 30;
 const PIN_ANCHOR = { x: 0.5, y: 1 };
 const PIN_ANCHOR_OFFSET = { x: 0, y: 1 };
 
-// Closest zone whose drawn circle (ZONE_RADIUS_M) covers the point, or null
-// when the point sits outside every zone we have data for.
-function findZoneAt(lat: number, lng: number, zones: Zone[]): Zone | null {
-  let closest: Zone | null = null;
-  let closestDistance = Number.POSITIVE_INFINITY;
-  for (const zone of zones) {
-    const distance = distanceMeters(lat, lng, zone.lat, zone.lng);
-    if (distance <= ZONE_RADIUS_M && distance < closestDistance) {
-      closest = zone;
-      closestDistance = distance;
-    }
-  }
-  return closest;
-}
-
 export default function MapScreen() {
   const { t, language } = useLanguage();
   const { premium, freeRemaining, showPaywall } = usePremium();
@@ -341,7 +329,7 @@ export default function MapScreen() {
   // Bumped after an admin edits a zone or safe place, so the map re-fetches
   // reference data that would otherwise only load once per mount.
   const [referenceReload, setReferenceReload] = useState(0);
-  const zones = useRemoteData(zonesData as Zone[], fetchZones, referenceReload);
+  const riskZones = useRiskZones(referenceReload);
   const safePlaces = useRemoteData(safePlacesData as SafePlace[], fetchSafePlaces, referenceReload);
   // Blue "you are here" dot on the map. Requesting the permission explicitly
   // (rather than just setting showsUserLocation) is required on Android for
@@ -414,9 +402,11 @@ export default function MapScreen() {
   // app restart, and updates the proximity-warning regions at the same time.
   useFocusEffect(refreshSubmittedPlaces);
   useFocusEffect(refreshPartnerListings);
-  // 6.3: default to Night mode automatically if it's currently night
-  // (22:00-05:59, same threshold as guardianContext.ts) — the toggle below
-  // still lets the user override it manually either way.
+  // Day/Night switches the basemap style (dark tiles at night — see
+  // mapDarkStyle.ts); risk zones themselves don't depend on it, they show
+  // whenever they are active. Defaults to Night automatically if it's
+  // currently night (22:00-05:59, same threshold as guardianContext.ts) — the
+  // toggle below still lets the user override it manually either way.
   const [mode, setMode] = useState<TimeMode>(() =>
     currentTimeOfDay() === 'night' ? 'night' : 'day',
   );
@@ -429,10 +419,9 @@ export default function MapScreen() {
     const timeout = setTimeout(() => setShowAutoNightToast(false), 5000);
     return () => clearTimeout(timeout);
   }, [showAutoNightToast]);
-  // Zones are hidden by day (clean sightseeing map) and switch on automatically
-  // from 19:00 through the night — the layers panel below still lets the user
-  // toggle them manually either way.
-  const [showZones, setShowZones] = useState(() => isEveningOrLater());
+  // Risk zones are warnings, so they are on by default at any hour — the
+  // layers panel below still lets the user hide them.
+  const [showZones, setShowZones] = useState(true);
   const [showEveningToast, setShowEveningToast] = useState(() => isEveningOrLater());
   // Explains why the map is showing Tbilisi instead of where the user is.
   // Unlike the evening/night toasts this one has no timer — it describes a
@@ -457,6 +446,9 @@ export default function MapScreen() {
     police: true,
     toilet: true,
   });
+  const [partnerVisibility, setPartnerVisibility] = useState<Record<ListingCategory, boolean>>(
+    () => Object.fromEntries(LISTING_CATEGORIES.map((c) => [c, true])) as Record<ListingCategory, boolean>,
+  );
   const [layersOpen, setLayersOpen] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -468,16 +460,38 @@ export default function MapScreen() {
   } | null>(null);
   const [newPlacePin, setNewPlacePin] = useState<{ lat: number; lng: number } | null>(null);
   const [adminTarget, setAdminTarget] = useState<AdminEditTarget | null>(null);
+  const [riskZoneTarget, setRiskZoneTarget] = useState<RiskZoneTarget | null>(null);
 
   const handleMapLongPress = useCallback(
     (e: LongPressEvent) => {
-      // Everyone can complete the report form. The submit action checks the
-      // server-side fifty-free-reports allowance and opens Premium only when the
-      // visitor has already used it.
       const { latitude, longitude } = e.nativeEvent.coordinate;
-      setNewPlacePin({ lat: latitude, lng: longitude });
+      // The same gesture creates a risk zone for the administrator, so they
+      // get to choose; tourists go straight to the report form. The submit
+      // action checks the server-side free-report allowance and opens Premium
+      // only when the visitor has already used it.
+      if (!isAdmin) {
+        setNewPlacePin({ lat: latitude, lng: longitude });
+        return;
+      }
+      Alert.alert(t('riskZone.longPressTitle'), undefined, [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('riskZone.longPressReport'), onPress: () => setNewPlacePin({ lat: latitude, lng: longitude }) },
+        { text: t('riskZone.longPressZone'), onPress: () => setRiskZoneTarget({ mode: 'create', lat: latitude, lng: longitude }) },
+      ]);
     },
-    [],
+    [isAdmin, t],
+  );
+
+  // Admin drag of a zone's centre marker — the circle follows on save.
+  const handleZoneDragEnd = useCallback(
+    (zone: RiskZone, e: MarkerDragStartEndEvent) => {
+      const { latitude, longitude } = e.nativeEvent.coordinate;
+      updateRiskZone(zone.id, { lat: latitude, lng: longitude }).then((ok) => {
+        if (ok) setReferenceReload((token) => token + 1);
+        else Alert.alert(t('admin.errorTitle'), t('admin.errorBody'));
+      });
+    },
+    [t],
   );
 
   // Tap on a POI drawn by Google itself (cafe, hotel, shop). We show the name
@@ -602,16 +616,16 @@ export default function MapScreen() {
     };
   }, [locationGranted]);
 
-  const circles = useMemo(
-    () =>
-      zones.map((zone) => {
-        const score = mode === 'day' ? zone.day_score : zone.night_score;
-        return { zone, color: TIER_COLORS[scoreToTier(score)] };
-      }),
-    [zones, mode],
-  );
+  // A newly fetched or edited zone should be geofenced right away, not on
+  // the next 10-minute tick — a warning is worth little if it arrives late.
+  useEffect(() => {
+    if (!locationGranted) return;
+    Location.getCurrentPositionAsync({})
+      .then((position) => refreshLandmarkGeofences(position.coords.latitude, position.coords.longitude))
+      .catch(() => {});
+  }, [riskZones, locationGranted]);
 
-  const handleZonePress = useCallback((zone: Zone) => {
+  const handleZonePress = useCallback((zone: RiskZone) => {
     setSelection({ type: 'zone', zone });
     setFeedbackGiven(false);
     bottomSheetRef.current?.expand();
@@ -712,32 +726,19 @@ export default function MapScreen() {
   const togglePlaceType = useCallback((type: SafePlaceType, value: boolean) => {
     setPlaceVisibility((prev) => ({ ...prev, [type]: value }));
   }, []);
+  const togglePartnerCategory = useCallback((category: ListingCategory, value: boolean) => {
+    setPartnerVisibility((prev) => ({ ...prev, [category]: value }));
+  }, []);
 
-  const selectedZoneScore =
-    selection?.type === 'zone'
-      ? mode === 'day'
-        ? selection.zone.day_score
-        : selection.zone.night_score
-      : null;
-  const selectedZoneTier =
-    selectedZoneScore !== null ? scoreToTier(selectedZoneScore) : null;
-
-  // Safety reading for a tapped basemap POI: the zone it sits in, scored for
-  // the currently selected time of day. Null when the POI is outside every
-  // zone we have data for — the sheet then says so rather than guessing.
+  // Safety reading for a tapped basemap POI: the risk zone it sits in, or
+  // null — the sheet then says "no active warnings" rather than guessing.
   const poiZone = useMemo(
     () =>
       selection?.type === 'poi'
-        ? findZoneAt(selection.poi.lat, selection.poi.lng, zones)
+        ? findRiskZoneAt(selection.poi.lat, selection.poi.lng, riskZones)
         : null,
-    [selection, zones],
+    [selection, riskZones],
   );
-  const poiZoneScore = poiZone
-    ? mode === 'day'
-      ? poiZone.day_score
-      : poiZone.night_score
-    : null;
-  const poiZoneTier = poiZoneScore !== null ? scoreToTier(poiZoneScore) : null;
 
   // Safe places whose pin would land on top of a landmark pin. Computed from
   // the data rather than hardcoded ids, so any future entry that collides is
@@ -764,6 +765,7 @@ export default function MapScreen() {
         // are tappable, which is what feeds the POI sheet below. Mobile map
         // loads are not billed.
         provider={PROVIDER_GOOGLE}
+        customMapStyle={mode === 'night' ? MAP_DARK_STYLE : undefined}
         initialRegion={TBILISI_REGION}
         onLongPress={handleMapLongPress}
         onPoiClick={handlePoiClick}
@@ -771,27 +773,31 @@ export default function MapScreen() {
         showsMyLocationButton={false}
       >
         {showZones &&
-          circles.map(({ zone, color }) => (
+          riskZones.map((zone) => (
             <Circle
               key={zone.id}
               center={{ latitude: zone.lat, longitude: zone.lng }}
-              radius={ZONE_RADIUS_M}
-              fillColor={withOpacity(color, 0.25)}
-              strokeColor={color}
+              radius={zone.radiusM}
+              fillColor={withOpacity(RISK_LEVEL_COLORS[zone.level], 0.25)}
+              strokeColor={RISK_LEVEL_COLORS[zone.level]}
               strokeWidth={2}
             />
           ))}
 
         {showZones &&
-          circles.map(({ zone, color }) => (
+          riskZones.map((zone) => (
             <Marker
               key={`${zone.id}-marker`}
               coordinate={{ latitude: zone.lat, longitude: zone.lng }}
               tracksViewChanges={false}
               zIndex={Z_INDEX.zone}
+              draggable={isAdmin}
+              onDragEnd={(e) => handleZoneDragEnd(zone, e)}
               onPress={() => handleZonePress(zone)}
             >
-              <View style={[styles.zoneDot, { backgroundColor: color }]} />
+              <View style={[styles.zoneDot, { backgroundColor: RISK_LEVEL_COLORS[zone.level] }]}>
+                <Ionicons name="warning" size={10} color={colors.white} />
+              </View>
             </Marker>
           ))}
 
@@ -871,7 +877,9 @@ export default function MapScreen() {
           </Marker>
         ))}
 
-        {partnerListings.map((listing) => (
+        {partnerListings
+          .filter((listing) => partnerVisibility[listing.category])
+          .map((listing) => (
           <Marker
             key={`partner-${listing.id}`}
             coordinate={{ latitude: listing.latitude!, longitude: listing.longitude! }}
@@ -982,7 +990,11 @@ export default function MapScreen() {
       )}
 
       {layersOpen && (
-        <View style={styles.layersPanel}>
+        <ScrollView
+          style={styles.layersPanel}
+          contentContainerStyle={styles.layersPanelContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.layerRow}>
             <Text style={styles.layerLabel}>{t('map.safetyZones')}</Text>
             <Switch
@@ -1010,7 +1022,18 @@ export default function MapScreen() {
               />
             </View>
           ))}
-        </View>
+          <View style={styles.layerDivider} />
+          {PARTNER_LAYER_CATEGORIES.map((category) => (
+            <View key={category} style={styles.layerRow}>
+              <Text style={styles.layerLabel}>{t(`partnerListings.category.${category}`)}</Text>
+              <Switch
+                value={partnerVisibility[category]}
+                onValueChange={(value) => togglePartnerCategory(category, value)}
+                trackColor={{ false: colors.border, true: colors.safe }}
+              />
+            </View>
+          ))}
+        </ScrollView>
       )}
 
       {legendOpen && (
@@ -1020,15 +1043,22 @@ export default function MapScreen() {
       {legendOpen && (
         <View style={styles.legendPanel}>
           <Text style={styles.legendTitle}>{t('map.legendTitle')}</Text>
-          {(['darkgreen', 'green', 'gold', 'red'] as ZoneTier[]).map((tier) => (
-            <View key={tier} style={styles.legendRow}>
-              <View style={[styles.legendDot, { backgroundColor: TIER_COLORS[tier] }]} />
+          {RISK_LEVELS.map((level) => (
+            <View key={level} style={styles.legendRow}>
+              <View style={[styles.legendDot, { backgroundColor: RISK_LEVEL_COLORS[level] }]} />
               <View style={styles.legendTextBlock}>
-                <Text style={styles.legendLabel}>{t(TIER_LABEL_KEYS[tier])}</Text>
-                <Text style={styles.legendRange}>{t(`map.legendRange${tier}`)}</Text>
+                <Text style={styles.legendLabel}>{t(RISK_LEVEL_LABEL_KEYS[level])}</Text>
+                <Text style={styles.legendRange}>{t(`map.legendHint_${level}`)}</Text>
               </View>
             </View>
           ))}
+          <View style={styles.legendRow}>
+            <View style={[styles.legendDot, styles.legendDotNone]} />
+            <View style={styles.legendTextBlock}>
+              <Text style={styles.legendLabel}>{t('map.legendNone')}</Text>
+              <Text style={styles.legendRange}>{t('map.legendHint_none')}</Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -1047,29 +1077,30 @@ export default function MapScreen() {
           showsVerticalScrollIndicator={false}
         >
           {isAdmin && selection && selection.type !== 'poi' && (
-            <Pressable style={styles.adminEditButton} onPress={() => setAdminTarget(selection)}>
+            <Pressable
+              style={styles.adminEditButton}
+              onPress={() =>
+                selection.type === 'zone'
+                  ? setRiskZoneTarget({ mode: 'edit', zone: selection.zone })
+                  : setAdminTarget(selection)
+              }
+            >
               <Ionicons name="create-outline" size={16} color={colors.background} />
               <Text style={styles.adminEditText}>{t('admin.editOnMap')}</Text>
             </Pressable>
           )}
-          {selection?.type === 'zone' && selectedZoneTier && selectedZoneScore !== null && (
+          {selection?.type === 'zone' && (
             <>
-              <Text style={styles.sheetTitle}>
-                {localizedField(selection.zone, 'name', language)}
-              </Text>
               <View style={styles.scoreRow}>
                 <View
-                  style={[styles.levelDot, { backgroundColor: TIER_COLORS[selectedZoneTier] }]}
+                  style={[styles.levelDot, { backgroundColor: RISK_LEVEL_COLORS[selection.zone.level] }]}
                 />
-                <Text style={styles.sheetScore}>
-                  {selectedZoneScore}/100 · {t(TIER_LABEL_KEYS[selectedZoneTier])}
-                </Text>
+                <Text style={styles.sheetTitle}>{t(RISK_LEVEL_LABEL_KEYS[selection.zone.level])}</Text>
               </View>
-              {localizedList(selection.zone, 'tips', language).map((tip) => (
-                <Text key={tip} style={styles.tip}>
-                  • {tip}
-                </Text>
-              ))}
+              <Text style={styles.landmarkDescription}>{riskZoneComment(selection.zone, language)}</Text>
+              <Text style={styles.sheetScore}>
+                {t('map.activeUntil').replace('{time}', formatExpiry(selection.zone.expiresAt))}
+              </Text>
               {feedbackGiven ? (
                 <Text style={styles.feedbackThanks}>{t('map.feedbackThanks')}</Text>
               ) : (
@@ -1244,24 +1275,15 @@ export default function MapScreen() {
           {selection?.type === 'poi' && (
             <>
               <Text style={styles.sheetTitle}>{selection.poi.name}</Text>
-              {poiZone && poiZoneTier && poiZoneScore !== null ? (
+              {poiZone ? (
                 <>
                   <View style={styles.scoreRow}>
                     <View
-                      style={[styles.levelDot, { backgroundColor: TIER_COLORS[poiZoneTier] }]}
+                      style={[styles.levelDot, { backgroundColor: RISK_LEVEL_COLORS[poiZone.level] }]}
                     />
-                    <Text style={styles.sheetScore}>
-                      {localizedField(poiZone, 'name', language)} · {poiZoneScore}/100 ·{' '}
-                      {t(TIER_LABEL_KEYS[poiZoneTier])}
-                    </Text>
+                    <Text style={styles.sheetScore}>{t(RISK_LEVEL_LABEL_KEYS[poiZone.level])}</Text>
                   </View>
-                  {localizedList(poiZone, 'tips', language)
-                    .slice(0, 2)
-                    .map((tip) => (
-                      <Text key={tip} style={styles.tip}>
-                        • {tip}
-                      </Text>
-                    ))}
+                  <Text style={styles.tip}>{riskZoneComment(poiZone, language)}</Text>
                 </>
               ) : (
                 <Text style={styles.landmarkDescription}>{t('map.poiNoZone')}</Text>
@@ -1306,6 +1328,17 @@ export default function MapScreen() {
           }}
         />
       )}
+
+      <RiskZoneModal
+        target={riskZoneTarget}
+        onClose={() => setRiskZoneTarget(null)}
+        onSaved={() => {
+          setRiskZoneTarget(null);
+          bottomSheetRef.current?.close();
+          setSelection(null);
+          setReferenceReload((token) => token + 1);
+        }}
+      />
 
       <AdminMapEditModal
         target={adminTarget}
@@ -1416,8 +1449,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 12,
     minWidth: 190,
+    // 16 toggle rows no longer fit on a phone above the bottom sheet /
+    // tab bar, so the panel scrolls past this height.
+    maxHeight: 440,
+  },
+  layersPanelContent: {
+    padding: 12,
   },
   legendButton: {
     position: 'absolute',
@@ -1511,25 +1549,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: 6,
   },
+  legendDotNone: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: colors.textMuted,
+  },
   zoneDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 2,
     borderColor: colors.white,
   },
   pinContainer: {
     alignItems: 'center',
-  },
-  pinBubble: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: LANDMARK_COLOR,
-    borderWidth: 2,
-    borderColor: colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   placeBubble: {
     width: 26,
@@ -1570,9 +1605,6 @@ const styles = StyleSheet.create({
     borderColor: colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  submissionBubblePending: {
-    backgroundColor: colors.textMuted,
   },
   pinArrow: {
     width: 0,
@@ -1737,16 +1769,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 13,
     fontWeight: '600',
-  },
-  stars: {
-    flexDirection: 'row',
-    gap: 4,
-    marginBottom: 8,
-  },
-  pendingNote: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontStyle: 'italic',
-    marginBottom: 14,
   },
 });

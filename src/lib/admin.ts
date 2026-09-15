@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { SafePlace, SafePlaceType, Zone } from './remoteData';
+import type { SafePlace, SafePlaceType } from './remoteData';
 import type { PlaceSubmissionCategory, PlaceSubmissionKind } from './placeSubmissions';
 import type { ListingCategory, ListingStatus, PartnerListing } from './rentals';
 import { uploadListingPhotos } from './rentals';
@@ -182,69 +182,6 @@ export async function fetchAdminSafePlaces(): Promise<SafePlace[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Zones
-// ---------------------------------------------------------------------------
-
-export type ZoneScoreInput = {
-  id: string;
-  day_score: number;
-  night_score: number;
-  tips_en: string[];
-  tips_ka: string[];
-  tips_ru: string[];
-};
-
-/**
- * Updates the editable parts of a zone. day_level/night_level are derived from
- * the scores here rather than being entered separately, so the colour on the
- * map can never contradict the number next to it.
- */
-export async function updateZone(input: ZoneScoreInput): Promise<boolean> {
-  if (!supabase) return false;
-  const { error } = await supabase
-    .from('zones')
-    .update({
-      day_score: input.day_score,
-      night_score: input.night_score,
-      day_level: scoreToLevel(input.day_score),
-      night_level: scoreToLevel(input.night_score),
-      tips_en: input.tips_en,
-      tips_ka: input.tips_ka,
-      tips_ru: input.tips_ru,
-    })
-    .eq('id', input.id);
-  return !error;
-}
-
-/** Mirrors the zones table's own three-value level check constraint. */
-function scoreToLevel(score: number): 'green' | 'yellow' | 'red' {
-  if (score >= 50) return 'green';
-  if (score >= 20) return 'yellow';
-  return 'red';
-}
-
-export async function fetchAdminZones(): Promise<Zone[]> {
-  if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.from('zones').select('*').order('id');
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    id: String(row.id),
-    name_en: String(row.name_en),
-    name_ka: row.name_ka ? String(row.name_ka) : '',
-    name_ru: row.name_ru ? String(row.name_ru) : '',
-    day_score: Number(row.day_score),
-    night_score: Number(row.night_score),
-    day_level: row.day_level as Zone['day_level'],
-    night_level: row.night_level as Zone['night_level'],
-    lat: Number(row.lat),
-    lng: Number(row.lng),
-    tips_en: Array.isArray(row.tips_en) ? (row.tips_en as string[]) : [],
-    tips_ka: Array.isArray(row.tips_ka) ? (row.tips_ka as string[]) : [],
-    tips_ru: Array.isArray(row.tips_ru) ? (row.tips_ru as string[]) : [],
-  }));
-}
-
-// ---------------------------------------------------------------------------
 // Reviews and zone feedback (read-only)
 // ---------------------------------------------------------------------------
 
@@ -294,7 +231,6 @@ export async function fetchAdminReviews(): Promise<AdminReview[]> {
   }));
 }
 
-/** Aggregated safe/unsafe vote counts per zone, highest traffic first. */
 // ---------------------------------------------------------------------------
 // Rental partners
 // ---------------------------------------------------------------------------
@@ -485,19 +421,36 @@ export async function deleteAdminCar(id: string): Promise<boolean> {
 
 export type ZoneFeedbackTally = {
   zoneId: string;
+  /** English comment of the zone, so the panel can show what was voted on. */
+  zoneComment: string;
   safe: number;
   unsafe: number;
 };
 
+/**
+ * Aggregated safe/unsafe vote counts per active risk zone, highest traffic
+ * first. Votes on zones that have since expired or been deleted are gone
+ * with them (cascade) and never show up here.
+ */
 export async function fetchZoneFeedback(): Promise<ZoneFeedbackTally[]> {
   if (!supabase) throw new Error('Supabase not configured');
-  const { data, error } = await supabase.from('feedback').select('zone_id, vote');
+  const { data, error } = await supabase
+    .from('zone_feedback')
+    .select('zone_id, vote, risk_zones(comment_en, comment_ka)');
   if (error) throw error;
 
   const tally = new Map<string, ZoneFeedbackTally>();
   for (const row of data ?? []) {
     const zoneId = String(row.zone_id);
-    const entry = tally.get(zoneId) ?? { zoneId, safe: 0, unsafe: 0 };
+    const zone = (Array.isArray(row.risk_zones) ? row.risk_zones[0] : row.risk_zones) as
+      | { comment_en?: string; comment_ka?: string }
+      | null;
+    const entry = tally.get(zoneId) ?? {
+      zoneId,
+      zoneComment: zone?.comment_en || zone?.comment_ka || zoneId,
+      safe: 0,
+      unsafe: 0,
+    };
     if (row.vote === 'safe') entry.safe += 1;
     else entry.unsafe += 1;
     tally.set(zoneId, entry);

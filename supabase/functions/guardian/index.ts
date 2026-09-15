@@ -4,7 +4,7 @@
 // lives ONLY here, as a Supabase secret (GEMINI_API_KEY) — it is never
 // bundled into the app or sent to the client (see gegma.txt 5.1: "API key
 // მხოლოდ Edge Function-ში, არასდროს აპში!"). The request/response contract
-// with the app (POST {messages, zoneName?, zoneLevel?, timeOfDay?} →
+// with the app (POST {messages, riskZone?, timeOfDay?} →
 // {reply, places}) is unchanged from the Claude version — src/lib/guardian.ts
 // and GuardianModal.tsx needed NO changes for this switch.
 //
@@ -61,7 +61,16 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-type ZoneLevel = 'green' | 'yellow' | 'red';
+type RiskLevel = 'orange' | 'red';
+
+// An admin-marked, time-limited warning circle the tourist is inside of or
+// right next to. Everywhere else is simply unmarked — never "rated safe".
+type RiskZone = {
+  level: RiskLevel;
+  comment: string;
+  distanceM: number;
+  inside: boolean;
+};
 
 type ChatTurn = { role: 'user' | 'assistant'; content: string };
 
@@ -82,8 +91,7 @@ type GuardianRequest = {
   visitLength?: string;
   ageBand?: string;
   rentalCars?: string[];
-  zoneName?: string;
-  zoneLevel?: ZoneLevel;
+  riskZone?: RiskZone;
   timeOfDay?: 'day' | 'night';
   // English names of the landmarks our own map has pins for near the user.
   // The client sends only the nearest ~15 (not all 97) — see
@@ -93,6 +101,24 @@ type GuardianRequest = {
 };
 
 type Place = { name: string; query: string };
+
+/** Whitelists the level and caps the comment so a hostile client cannot inject prompt text at will. */
+function sanitizeRiskZone(value: unknown): RiskZone | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const zone = value as Record<string, unknown>;
+  if (zone.level !== 'orange' && zone.level !== 'red') return undefined;
+  if (typeof zone.comment !== 'string') return undefined;
+  const distanceM =
+    typeof zone.distanceM === 'number' && Number.isFinite(zone.distanceM)
+      ? Math.max(0, Math.min(5000, Math.round(zone.distanceM)))
+      : 0;
+  return {
+    level: zone.level,
+    comment: zone.comment.slice(0, 300),
+    distanceM,
+    inside: zone.inside === true || distanceM === 0,
+  };
+}
 
 function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -138,12 +164,16 @@ function buildSystemPrompt(context: Omit<GuardianRequest, 'message' | 'messages'
       '(the country). You are talking to a tourist inside the app right now.',
 
     'The app you live in has 5 tabs.\n' +
-      'MAP: safety zones drawn as colored circles, colored purely by a 0-100 score with ' +
-      'separate day and night ratings — 80-100 dark green (very safe), 50-79 green (safe), ' +
-      '20-49 gold (caution), 0-19 red (high risk); an info button opens a legend of exactly ' +
-      'these four bands. Zones are hidden during the day for a clean map and switch on ' +
-      'automatically from 19:00 until 06:00. Tapping a zone shows its score, safety tips, ' +
-      'and anonymous "I felt safe/unsafe here" buttons. The map also has ~97 curated ' +
+      'MAP: risk zones — orange (caution) or red (high-risk) circles that the app\'s ' +
+      'administrator marks around a current situation (an incident, protest, roadworks, ' +
+      'a rough street at night) with a short comment saying what is happening; each ' +
+      'zone expires by itself after the hours or days the admin chose. Everywhere that ' +
+      'is NOT inside a circle is simply unmarked — it means "no known warning", never a ' +
+      'guarantee of safety, and you must not describe unmarked areas as rated safe. An ' +
+      'info button opens a legend of exactly these three states. Tapping a zone shows the ' +
+      'comment, how long it stays active, and anonymous "I felt safe/unsafe here" ' +
+      'buttons. The app also notifies the tourist when they physically walk into a zone. ' +
+      'The map also has ~97 curated ' +
       'tourist landmarks across all of Georgia (not just Tbilisi: Mtskheta, Kakheti, the ' +
       'Georgian Military Highway, Svaneti, Racha, Imereti, Samegrelo, Adjara, Guria, ' +
       'Samtskhe-Javakheti, Kvemo Kartli, Shida Kartli), plus safe places (24h pharmacies, ' +
@@ -170,7 +200,7 @@ function buildSystemPrompt(context: Omit<GuardianRequest, 'message' | 'messages'
       'to 112, dispatch emergency services, notify nearby app users, or verify SMS ' +
       'delivery. Your own mascot button ' +
       '(bottom-left) that opens this chat — it sometimes pops up a small speech bubble ' +
-      'suggesting a question. At night in a caution/high-risk zone an orange banner offers ' +
+      'suggesting a question. While inside a risk zone an orange banner offers ' +
       'a safer route through you. When it genuinely helps, point the user to these ' +
       'features by name and location in the app. Never describe a feature the app does ' +
       'not have; if you are unsure whether it exists, say so instead of guessing.',
@@ -267,18 +297,24 @@ function buildSystemPrompt(context: Omit<GuardianRequest, 'message' | 'messages'
     );
   }
 
-  if (context.zoneName) {
-    const levelPhrase: Record<ZoneLevel, string> = {
-      green: 'generally rated safe',
-      yellow: 'rated as needing caution',
-      red: 'rated higher risk',
-    };
+  if (context.riskZone) {
+    const { level, comment, distanceM, inside } = context.riskZone;
+    const levelPhrase = level === 'red' ? 'RED (high risk)' : 'ORANGE (caution)';
+    const where = inside
+      ? 'The tourist is currently INSIDE this zone.'
+      : `The tourist is about ${distanceM} m from the edge of this zone.`;
     parts.push(
-      `Background only, possibly irrelevant to their question: the tourist's GPS is ` +
-        `currently nearest to the "${context.zoneName}" zone` +
-        (context.zoneLevel ? ` (${levelPhrase[context.zoneLevel]})` : '') +
-        `. Only bring this up if actually relevant — never assume their question is ` +
-        `about this area.`,
+      `Important safety context: the app's administrator has marked a ${levelPhrase} risk ` +
+        `zone near the tourist's GPS position. Admin's note on what is happening: "${comment}". ` +
+        `${where} If they ask what to do, where to go, or about their surroundings, take ` +
+        `this into account — e.g. suggest leaving or avoiding the marked area and staying ` +
+        `on busy, well-lit streets — but do not lecture them about it in answers on ` +
+        `unrelated topics. Never invent details beyond the admin's note.`,
+    );
+  } else {
+    parts.push(
+      'There is no admin-marked risk zone near the tourist right now. That means "no ' +
+        'known warning", not a safety rating — do not tell them the area is rated safe.',
     );
   }
 
@@ -503,8 +539,7 @@ Deno.serve(async (req: Request) => {
       ['under18', '18-20', '21-23', '24plus'].includes(body.ageBand)
         ? body.ageBand
         : undefined,
-    zoneName: body.zoneName,
-    zoneLevel: body.zoneLevel,
+    riskZone: sanitizeRiskZone(body.riskZone),
     timeOfDay: body.timeOfDay,
     // Hard-capped server-side too, so a malformed/hostile client can't inflate
     // the prompt (and the bill) by sending an unbounded list.
