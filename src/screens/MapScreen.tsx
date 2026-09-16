@@ -32,6 +32,9 @@ import type { AdminEditTarget } from '../components/admin/AdminMapEditModal';
 import { useAuth } from '../auth/AuthContext';
 import { isAdminEmail } from '../lib/admin';
 import LandmarkMarker from '../components/LandmarkMarker';
+import ClusterMarker from '../components/ClusterMarker';
+import { buildClusterIndex, clustersInRegion, zoomToDelta } from '../lib/mapClusters';
+import type { ClusterIndex, ClusterItem } from '../lib/mapClusters';
 import { fetchPlaceSubmissions } from '../lib/placeSubmissions';
 import { fetchPlacePhotos, photoKey } from '../lib/placePhotos';
 import { usePremium } from '../premium/PremiumContext';
@@ -216,22 +219,33 @@ const TBILISI_REGION = {
   longitudeDelta: 0.16,
 };
 
-// Every pin layer except landmarks (safe places — 300+ police stations
-// nationwide — community reports, partner listings) is only rendered inside
-// the visible region plus this margin, and not at all once the map is zoomed
-// out past MAX_PLACE_PIN_DELTA (~65 km tall) — at that scale the pins are an
-// unreadable blob and, more importantly, hundreds of custom-view markers made
-// the map stutter on every pan. Landmarks stay: 97 pins is fine, and they are
-// what a tourist zooms out to find. Risk-zone circles stay too — warnings.
+// Pins are rendered only inside the visible region plus this margin, and
+// per layer they are clustered (see mapClusters.ts) so the map never holds
+// more than a few dozen native markers no matter how many rows a layer has —
+// hundreds of custom-view markers made the map stutter on every pan.
+// Safe places, community reports and partner listings additionally vanish
+// once the map is zoomed out past MAX_PLACE_PIN_DELTA (~65 km tall); at that
+// scale they are noise. Landmarks stay at every zoom (they are what a tourist
+// zooms out to find) and simply cluster. Risk-zone circles are never culled.
 const PLACE_VIEWPORT_MARGIN = 0.3;
 const MAX_PLACE_PIN_DELTA = 0.6;
 
-function isInsideRegion(lat: number, lng: number, region: Region): boolean {
-  const latPad = region.latitudeDelta * (0.5 + PLACE_VIEWPORT_MARGIN);
-  const lngPad = region.longitudeDelta * (0.5 + PLACE_VIEWPORT_MARGIN);
-  return (
-    Math.abs(lat - region.latitude) <= latPad && Math.abs(lng - region.longitude) <= lngPad
-  );
+/** One cluster index per layer key (safe-place type, report kind, partner category). */
+function indexesByKey<T, K extends string>(
+  items: T[],
+  keyOf: (item: T) => K,
+  coordinate: (item: T) => { lat: number; lng: number },
+): Partial<Record<K, ClusterIndex<T>>> {
+  const groups = new Map<K, T[]>();
+  for (const item of items) {
+    const key = keyOf(item);
+    const group = groups.get(key);
+    if (group) group.push(item);
+    else groups.set(key, [item]);
+  }
+  const result: Partial<Record<K, ClusterIndex<T>>> = {};
+  for (const [key, group] of groups) result[key] = buildClusterIndex(group, coordinate);
+  return result;
 }
 
 // How often to re-pick the nearest 20 unvisited landmarks to geofence, as
@@ -807,35 +821,82 @@ export default function MapScreen() {
     [selection, riskZones],
   );
 
-  const visibleSafePlaces = useMemo(() => {
-    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
-    return safePlaces.filter(
-      (place) => placeVisibility[place.type] && isInsideRegion(place.lat, place.lng, visibleRegion),
-    );
-  }, [safePlaces, placeVisibility, visibleRegion]);
+  // Cluster indexes are built once per dataset, not per pan.
+  const landmarkIndex = useMemo(() => buildClusterIndex(landmarks, (l) => l), []);
+  const placeIndexes = useMemo(
+    () => indexesByKey(safePlaces, (place) => place.type, (place) => place),
+    [safePlaces],
+  );
+  const submissionIndexes = useMemo(
+    () => indexesByKey(submittedPlaces, (submission) => submission.kind, (submission) => submission),
+    [submittedPlaces],
+  );
+  const partnerIndexes = useMemo(
+    () =>
+      indexesByKey(partnerListings, (listing) => listing.category, (listing) => ({
+        lat: listing.latitude!,
+        lng: listing.longitude!,
+      })),
+    [partnerListings],
+  );
 
-  const visibleSubmissions = useMemo(() => {
-    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
-    return submittedPlaces.filter((submission) =>
-      isInsideRegion(submission.lat, submission.lng, visibleRegion),
-    );
-  }, [submittedPlaces, visibleRegion]);
+  const tooFarOut = visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA;
 
-  const visiblePartnerListings = useMemo(() => {
-    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
-    return partnerListings.filter(
-      (listing) =>
-        partnerVisibility[listing.category] &&
-        isInsideRegion(listing.latitude!, listing.longitude!, visibleRegion),
+  const landmarkLayer = useMemo(
+    () => (showLandmarks ? clustersInRegion(landmarkIndex, visibleRegion, PLACE_VIEWPORT_MARGIN) : []),
+    [landmarkIndex, showLandmarks, visibleRegion],
+  );
+  const placeLayer = useMemo(() => {
+    if (tooFarOut) return [];
+    return (Object.keys(placeIndexes) as SafePlaceType[])
+      .filter((type) => placeVisibility[type])
+      .flatMap((type) =>
+        clustersInRegion(placeIndexes[type]!, visibleRegion, PLACE_VIEWPORT_MARGIN).map(
+          (entry): { type: SafePlaceType } & ClusterItem<SafePlace> => ({ type, ...entry }),
+        ),
+      );
+  }, [placeIndexes, placeVisibility, visibleRegion, tooFarOut]);
+  const submissionLayer = useMemo(() => {
+    if (tooFarOut) return [];
+    return (Object.keys(submissionIndexes) as PlaceSubmissionKind[]).flatMap((reportKind) =>
+      clustersInRegion(submissionIndexes[reportKind]!, visibleRegion, PLACE_VIEWPORT_MARGIN).map(
+        (entry): { reportKind: PlaceSubmissionKind } & ClusterItem<PlaceSubmission> => ({ reportKind, ...entry }),
+      ),
     );
-  }, [partnerListings, partnerVisibility, visibleRegion]);
+  }, [submissionIndexes, visibleRegion, tooFarOut]);
+  const partnerLayer = useMemo(() => {
+    if (tooFarOut) return [];
+    return (Object.keys(partnerIndexes) as ListingCategory[])
+      .filter((category) => partnerVisibility[category])
+      .flatMap((category) =>
+        clustersInRegion(partnerIndexes[category]!, visibleRegion, PLACE_VIEWPORT_MARGIN).map(
+          (entry): { category: ListingCategory } & ClusterItem<PartnerListing> => ({ category, ...entry }),
+        ),
+      );
+  }, [partnerIndexes, partnerVisibility, visibleRegion, tooFarOut]);
+
+  // Tapping a cluster zooms to the level where supercluster splits it, keeping
+  // the current aspect ratio so the map does not visibly stretch.
+  const handleClusterPress = useCallback(
+    (lat: number, lng: number, expansionZoom: number) => {
+      const longitudeDelta = zoomToDelta(expansionZoom);
+      const aspect = visibleRegion.latitudeDelta / visibleRegion.longitudeDelta;
+      mapRef.current?.animateToRegion(
+        { latitude: lat, longitude: lng, longitudeDelta, latitudeDelta: longitudeDelta * aspect },
+        350,
+      );
+    },
+    [visibleRegion],
+  );
 
   // Safe places whose pin would land on top of a landmark pin. Computed from
   // the data rather than hardcoded ids, so any future entry that collides is
   // nudged automatically.
   const overlappingPlaceIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const place of visibleSafePlaces) {
+    for (const entry of placeLayer) {
+      if (entry.kind !== 'point') continue;
+      const place = entry.item;
       const collides = landmarks.some(
         (landmark) =>
           distanceMeters(place.lat, place.lng, landmark.lat, landmark.lng) < PIN_OVERLAP_M,
@@ -843,7 +904,7 @@ export default function MapScreen() {
       if (collides) ids.add(place.id);
     }
     return ids;
-  }, [visibleSafePlaces]);
+  }, [placeLayer]);
 
   return (
     <View style={styles.container}>
@@ -893,8 +954,22 @@ export default function MapScreen() {
             </Marker>
           ))}
 
-        {showLandmarks &&
-          landmarks.map((landmark) => (
+        {landmarkLayer.map((entry) => {
+          if (entry.kind === 'cluster') {
+            return (
+              <ClusterMarker
+                key={`landmark-cluster-${entry.id}`}
+                lat={entry.lat}
+                lng={entry.lng}
+                count={entry.count}
+                color={LANDMARK_COLOR}
+                zIndex={Z_INDEX.landmark}
+                onPress={() => handleClusterPress(entry.lat, entry.lng, entry.expansionZoom)}
+              />
+            );
+          }
+          const landmark = entry.item;
+          return (
             <LandmarkMarker
               key={landmark.id}
               lat={landmark.lat}
@@ -911,9 +986,25 @@ export default function MapScreen() {
               }
               onPress={() => handleLandmarkPress(landmark)}
             />
-          ))}
+          );
+        })}
 
-        {visibleSafePlaces.map((place) => (
+        {placeLayer.map((entry) => {
+          if (entry.kind === 'cluster') {
+            return (
+              <ClusterMarker
+                key={`place-cluster-${entry.type}-${entry.id}`}
+                lat={entry.lat}
+                lng={entry.lng}
+                count={entry.count}
+                color={PLACE_COLORS[entry.type]}
+                zIndex={Z_INDEX.place}
+                onPress={() => handleClusterPress(entry.lat, entry.lng, entry.expansionZoom)}
+              />
+            );
+          }
+          const place = entry.item;
+          return (
             <Marker
               key={place.id}
               coordinate={{ latitude: place.lat, longitude: place.lng }}
@@ -933,9 +1024,25 @@ export default function MapScreen() {
                 />
               </View>
             </Marker>
-          ))}
+          );
+        })}
 
-        {visibleSubmissions.map((submission) => (
+        {submissionLayer.map((entry) => {
+          if (entry.kind === 'cluster') {
+            return (
+              <ClusterMarker
+                key={`submission-cluster-${entry.reportKind}-${entry.id}`}
+                lat={entry.lat}
+                lng={entry.lng}
+                count={entry.count}
+                color={SUBMISSION_KIND_COLORS[entry.reportKind]}
+                zIndex={Z_INDEX.submission}
+                onPress={() => handleClusterPress(entry.lat, entry.lng, entry.expansionZoom)}
+              />
+            );
+          }
+          const submission = entry.item;
+          return (
           <Marker
             key={submission.id}
             coordinate={{ latitude: submission.lat, longitude: submission.lng }}
@@ -965,9 +1072,25 @@ export default function MapScreen() {
               />
             </View>
           </Marker>
-        ))}
+          );
+        })}
 
-        {visiblePartnerListings.map((listing) => (
+        {partnerLayer.map((entry) => {
+          if (entry.kind === 'cluster') {
+            return (
+              <ClusterMarker
+                key={`partner-cluster-${entry.category}-${entry.id}`}
+                lat={entry.lat}
+                lng={entry.lng}
+                count={entry.count}
+                color={PARTNER_CATEGORY_COLORS[entry.category]}
+                zIndex={Z_INDEX.partnerListing}
+                onPress={() => handleClusterPress(entry.lat, entry.lng, entry.expansionZoom)}
+              />
+            );
+          }
+          const listing = entry.item;
+          return (
           <Marker
             key={`partner-${listing.id}`}
             coordinate={{ latitude: listing.latitude!, longitude: listing.longitude! }}
@@ -986,7 +1109,8 @@ export default function MapScreen() {
               <View style={[styles.pinArrow, { borderTopColor: PARTNER_CATEGORY_COLORS[listing.category] }]} />
             </View>
           </Marker>
-        ))}
+          );
+        })}
 
         {newPlacePin && (
           <Marker
