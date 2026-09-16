@@ -3,7 +3,7 @@ import { Alert, DeviceEventEmitter, Linking, Pressable, ScrollView, StyleSheet, 
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import type { LongPressEvent, MarkerDragStartEndEvent, PoiClickEvent } from 'react-native-maps';
+import type { LongPressEvent, MapPressEvent, MarkerDragStartEndEvent, PoiClickEvent } from 'react-native-maps';
 import { useFocusEffect } from '@react-navigation/native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
@@ -43,6 +43,8 @@ import { presentEveningZoneNotification } from '../lib/notifications';
 import { startEveningZoneLiveActivity } from '../lib/liveActivity';
 import {
   shouldSendEveningNudgeToday,
+  hasSeenLayersIntro,
+  setLayersIntroSeen,
   getVisitedLandmarkIds,
   addVisitedLandmarkId,
   removeVisitedLandmarkId,
@@ -450,6 +452,12 @@ export default function MapScreen() {
     () => Object.fromEntries(LISTING_CATEGORIES.map((c) => [c, true])) as Record<ListingCategory, boolean>,
   );
   const [layersOpen, setLayersOpen] = useState(false);
+  // "1" badge on the layers button until the panel is opened once — see
+  // hasSeenLayersIntro. Starts hidden so it never flashes for returning users.
+  const [showLayersBadge, setShowLayersBadge] = useState(false);
+  useEffect(() => {
+    hasSeenLayersIntro().then((seen) => setShowLayersBadge(!seen));
+  }, []);
   const [legendOpen, setLegendOpen] = useState(false);
   const [selection, setSelection] = useState<Selection | null>(null);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
@@ -631,6 +639,19 @@ export default function MapScreen() {
     bottomSheetRef.current?.expand();
   }, []);
 
+  // Circles have no onPress in react-native-maps and the zones deliberately
+  // carry no centre marker (a plain circle is the whole visual), so a tap
+  // anywhere inside a circle is resolved here from the coordinate.
+  const handleMapPress = useCallback(
+    (e: MapPressEvent) => {
+      if (!showZones) return;
+      const { latitude, longitude } = e.nativeEvent.coordinate;
+      const zone = findRiskZoneAt(latitude, longitude, riskZones);
+      if (zone) handleZonePress(zone);
+    },
+    [showZones, riskZones, handleZonePress],
+  );
+
   const handleZoneFeedback = useCallback((zoneId: string, vote: ZoneVote) => {
     // Optimistic: the vote is anonymous and non-critical, so the tourist
     // sees the thank-you immediately regardless of connectivity — the
@@ -767,6 +788,7 @@ export default function MapScreen() {
         provider={PROVIDER_GOOGLE}
         customMapStyle={mode === 'night' ? MAP_DARK_STYLE : undefined}
         initialRegion={TBILISI_REGION}
+        onPress={handleMapPress}
         onLongPress={handleMapLongPress}
         onPoiClick={handlePoiClick}
         showsUserLocation={locationGranted}
@@ -784,20 +806,20 @@ export default function MapScreen() {
             />
           ))}
 
+        {/* Admin only: a small draggable handle at the centre, for moving the zone. */}
         {showZones &&
+          isAdmin &&
           riskZones.map((zone) => (
             <Marker
-              key={`${zone.id}-marker`}
+              key={`${zone.id}-handle`}
               coordinate={{ latitude: zone.lat, longitude: zone.lng }}
               tracksViewChanges={false}
               zIndex={Z_INDEX.zone}
-              draggable={isAdmin}
+              draggable
               onDragEnd={(e) => handleZoneDragEnd(zone, e)}
               onPress={() => handleZonePress(zone)}
             >
-              <View style={[styles.zoneDot, { backgroundColor: RISK_LEVEL_COLORS[zone.level] }]}>
-                <Ionicons name="warning" size={10} color={colors.white} />
-              </View>
+              <View style={[styles.zoneDot, { backgroundColor: RISK_LEVEL_COLORS[zone.level] }]} />
             </Marker>
           ))}
 
@@ -934,9 +956,18 @@ export default function MapScreen() {
         onPress={() => {
           setLegendOpen(false);
           setLayersOpen((open) => !open);
+          if (showLayersBadge) {
+            setShowLayersBadge(false);
+            setLayersIntroSeen();
+          }
         }}
       >
         <Ionicons name="layers" size={22} color={colors.text} />
+        {showLayersBadge && (
+          <View style={styles.layersBadge}>
+            <Text style={styles.layersBadgeText}>1</Text>
+          </View>
+        )}
       </Pressable>
 
       <Pressable
@@ -1441,6 +1472,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  layersBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.risk,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  layersBadgeText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '800',
+  },
   layersPanel: {
     position: 'absolute',
     top: 104,
@@ -1555,11 +1603,9 @@ const styles = StyleSheet.create({
     borderColor: colors.textMuted,
   },
   zoneDot: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     borderWidth: 2,
     borderColor: colors.white,
   },

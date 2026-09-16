@@ -33,6 +33,30 @@ export async function setGuardianIntroSeen(): Promise<void> {
   }
 }
 
+const LAYERS_INTRO_KEY = 'georgia_safe_layers_intro_seen';
+
+/**
+ * Whether the tourist has opened the map's layers panel at least once. Drives
+ * the "1" badge on the layers button — the same nudge as the assistant's,
+ * for the same reason: the panel is easy to miss and hides half the map.
+ */
+export async function hasSeenLayersIntro(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(LAYERS_INTRO_KEY)) === 'true';
+  } catch {
+    // Treat a storage failure as "already seen" so a broken read can't nag.
+    return true;
+  }
+}
+
+export async function setLayersIntroSeen(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LAYERS_INTRO_KEY, 'true');
+  } catch {
+    // Worst case the badge shows again next launch.
+  }
+}
+
 /**
  * The handful of onboarding answers Guardian uses to tailor advice. Cached
  * locally so opening the chat never waits on a network round trip — and still
