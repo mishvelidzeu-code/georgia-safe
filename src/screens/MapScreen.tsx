@@ -216,11 +216,13 @@ const TBILISI_REGION = {
   longitudeDelta: 0.16,
 };
 
-// Safe-place pins (300+ police stations nationwide) are only rendered inside
+// Every pin layer except landmarks (safe places — 300+ police stations
+// nationwide — community reports, partner listings) is only rendered inside
 // the visible region plus this margin, and not at all once the map is zoomed
 // out past MAX_PLACE_PIN_DELTA (~65 km tall) — at that scale the pins are an
 // unreadable blob and, more importantly, hundreds of custom-view markers made
-// the map stutter on every pan.
+// the map stutter on every pan. Landmarks stay: 97 pins is fine, and they are
+// what a tourist zooms out to find. Risk-zone circles stay too — warnings.
 const PLACE_VIEWPORT_MARGIN = 0.3;
 const MAX_PLACE_PIN_DELTA = 0.6;
 
@@ -812,6 +814,22 @@ export default function MapScreen() {
     );
   }, [safePlaces, placeVisibility, visibleRegion]);
 
+  const visibleSubmissions = useMemo(() => {
+    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
+    return submittedPlaces.filter((submission) =>
+      isInsideRegion(submission.lat, submission.lng, visibleRegion),
+    );
+  }, [submittedPlaces, visibleRegion]);
+
+  const visiblePartnerListings = useMemo(() => {
+    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
+    return partnerListings.filter(
+      (listing) =>
+        partnerVisibility[listing.category] &&
+        isInsideRegion(listing.latitude!, listing.longitude!, visibleRegion),
+    );
+  }, [partnerListings, partnerVisibility, visibleRegion]);
+
   // Safe places whose pin would land on top of a landmark pin. Computed from
   // the data rather than hardcoded ids, so any future entry that collides is
   // nudged automatically.
@@ -917,7 +935,7 @@ export default function MapScreen() {
             </Marker>
           ))}
 
-        {submittedPlaces.map((submission) => (
+        {visibleSubmissions.map((submission) => (
           <Marker
             key={submission.id}
             coordinate={{ latitude: submission.lat, longitude: submission.lng }}
@@ -949,9 +967,7 @@ export default function MapScreen() {
           </Marker>
         ))}
 
-        {partnerListings
-          .filter((listing) => partnerVisibility[listing.category])
-          .map((listing) => (
+        {visiblePartnerListings.map((listing) => (
           <Marker
             key={`partner-${listing.id}`}
             coordinate={{ latitude: listing.latitude!, longitude: listing.longitude! }}
