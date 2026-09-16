@@ -3,7 +3,7 @@ import { Alert, DeviceEventEmitter, Linking, Pressable, ScrollView, StyleSheet, 
 import { Image } from 'expo-image';
 import * as Location from 'expo-location';
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import type { LongPressEvent, MapPressEvent, MarkerDragStartEndEvent, PoiClickEvent } from 'react-native-maps';
+import type { LongPressEvent, MapPressEvent, MarkerDragStartEndEvent, PoiClickEvent, Region } from 'react-native-maps';
 import { useFocusEffect } from '@react-navigation/native';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
@@ -45,6 +45,8 @@ import {
   shouldSendEveningNudgeToday,
   hasSeenLayersIntro,
   setLayersIntroSeen,
+  getMapLayerPrefs,
+  setMapLayerPrefs,
   getVisitedLandmarkIds,
   addVisitedLandmarkId,
   removeVisitedLandmarkId,
@@ -213,6 +215,22 @@ const TBILISI_REGION = {
   latitudeDelta: 0.16,
   longitudeDelta: 0.16,
 };
+
+// Safe-place pins (300+ police stations nationwide) are only rendered inside
+// the visible region plus this margin, and not at all once the map is zoomed
+// out past MAX_PLACE_PIN_DELTA (~65 km tall) — at that scale the pins are an
+// unreadable blob and, more importantly, hundreds of custom-view markers made
+// the map stutter on every pan.
+const PLACE_VIEWPORT_MARGIN = 0.3;
+const MAX_PLACE_PIN_DELTA = 0.6;
+
+function isInsideRegion(lat: number, lng: number, region: Region): boolean {
+  const latPad = region.latitudeDelta * (0.5 + PLACE_VIEWPORT_MARGIN);
+  const lngPad = region.longitudeDelta * (0.5 + PLACE_VIEWPORT_MARGIN);
+  return (
+    Math.abs(lat - region.latitude) <= latPad && Math.abs(lng - region.longitude) <= lngPad
+  );
+}
 
 // How often to re-pick the nearest 20 unvisited landmarks to geofence, as
 // the tourist travels between regions (see landmarkGeofencing.ts).
@@ -451,6 +469,32 @@ export default function MapScreen() {
   const [partnerVisibility, setPartnerVisibility] = useState<Record<ListingCategory, boolean>>(
     () => Object.fromEntries(LISTING_CATEGORIES.map((c) => [c, true])) as Record<ListingCategory, boolean>,
   );
+  // Layer choices persist across launches (see getMapLayerPrefs). Nothing is
+  // written until the stored value has been read, so defaults never clobber it.
+  const layerPrefsLoaded = useRef(false);
+  useEffect(() => {
+    getMapLayerPrefs().then((prefs) => {
+      if (prefs) {
+        setShowZones(prefs.zones);
+        setShowLandmarks(prefs.landmarks);
+        setPlaceVisibility((current) => ({ ...current, ...prefs.places }));
+        setPartnerVisibility((current) => ({ ...current, ...prefs.partners }));
+      }
+      layerPrefsLoaded.current = true;
+    });
+  }, []);
+  useEffect(() => {
+    if (!layerPrefsLoaded.current) return;
+    setMapLayerPrefs({
+      zones: showZones,
+      landmarks: showLandmarks,
+      places: placeVisibility,
+      partners: partnerVisibility,
+    });
+  }, [showZones, showLandmarks, placeVisibility, partnerVisibility]);
+  // Only the pins inside (roughly) the visible map are mounted — see
+  // MAX_PLACE_PIN_DELTA.
+  const [visibleRegion, setVisibleRegion] = useState<Region>(TBILISI_REGION);
   const [layersOpen, setLayersOpen] = useState(false);
   // "1" badge on the layers button until the panel is opened once — see
   // hasSeenLayersIntro. Starts hidden so it never flashes for returning users.
@@ -761,12 +805,19 @@ export default function MapScreen() {
     [selection, riskZones],
   );
 
+  const visibleSafePlaces = useMemo(() => {
+    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
+    return safePlaces.filter(
+      (place) => placeVisibility[place.type] && isInsideRegion(place.lat, place.lng, visibleRegion),
+    );
+  }, [safePlaces, placeVisibility, visibleRegion]);
+
   // Safe places whose pin would land on top of a landmark pin. Computed from
   // the data rather than hardcoded ids, so any future entry that collides is
   // nudged automatically.
   const overlappingPlaceIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const place of safePlaces) {
+    for (const place of visibleSafePlaces) {
       const collides = landmarks.some(
         (landmark) =>
           distanceMeters(place.lat, place.lng, landmark.lat, landmark.lng) < PIN_OVERLAP_M,
@@ -774,7 +825,7 @@ export default function MapScreen() {
       if (collides) ids.add(place.id);
     }
     return ids;
-  }, [safePlaces]);
+  }, [visibleSafePlaces]);
 
   return (
     <View style={styles.container}>
@@ -790,6 +841,7 @@ export default function MapScreen() {
         initialRegion={TBILISI_REGION}
         onPress={handleMapPress}
         onLongPress={handleMapLongPress}
+        onRegionChangeComplete={setVisibleRegion}
         onPoiClick={handlePoiClick}
         showsUserLocation={locationGranted}
         showsMyLocationButton={false}
@@ -843,9 +895,7 @@ export default function MapScreen() {
             />
           ))}
 
-        {safePlaces
-          .filter((place) => placeVisibility[place.type])
-          .map((place) => (
+        {visibleSafePlaces.map((place) => (
             <Marker
               key={place.id}
               coordinate={{ latitude: place.lat, longitude: place.lng }}

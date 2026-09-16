@@ -154,6 +154,51 @@ export async function clearGuardianChat(): Promise<void> {
   }
 }
 
+const MAP_LAYERS_KEY = 'georgia_safe_map_layers';
+
+/**
+ * Which map layers the tourist switched off in the layers panel. Persisted so
+ * a choice like "no police pins" survives closing the app — the panel is a
+ * setting, not a one-session toggle. Unknown keys are simply ignored on read,
+ * so adding a layer later never breaks an older saved value.
+ */
+export type MapLayerPrefs = {
+  zones: boolean;
+  landmarks: boolean;
+  places: Record<string, boolean>;
+  partners: Record<string, boolean>;
+};
+
+export async function getMapLayerPrefs(): Promise<MapLayerPrefs | null> {
+  try {
+    const raw = await AsyncStorage.getItem(MAP_LAYERS_KEY);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const value = parsed as Record<string, unknown>;
+    const flags = (input: unknown): Record<string, boolean> =>
+      input && typeof input === 'object'
+        ? Object.fromEntries(Object.entries(input as Record<string, unknown>).filter(([, v]) => typeof v === 'boolean')) as Record<string, boolean>
+        : {};
+    return {
+      zones: value.zones !== false,
+      landmarks: value.landmarks !== false,
+      places: flags(value.places),
+      partners: flags(value.partners),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function setMapLayerPrefs(prefs: MapLayerPrefs): Promise<void> {
+  try {
+    await AsyncStorage.setItem(MAP_LAYERS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Worst case the layers reset to defaults next launch.
+  }
+}
+
 /**
  * How far a floating button has been dragged from its default corner, in
  * points. Stored per button id so SOS and Guardian move independently.
