@@ -216,15 +216,45 @@ const TBILISI_REGION = {
   longitudeDelta: 0.16,
 };
 
-// Every pin layer except landmarks (safe places — 300+ police stations
-// nationwide — community reports, partner listings) is only rendered inside
-// the visible region plus this margin, and not at all once the map is zoomed
-// out past MAX_PLACE_PIN_DELTA (~65 km tall) — at that scale the pins are an
-// unreadable blob and, more importantly, hundreds of custom-view markers made
-// the map stutter on every pan. Landmarks stay: 97 pins is fine, and they are
-// what a tourist zooms out to find. Risk-zone circles stay too — warnings.
+// Every pin layer except landmarks is only rendered inside the visible
+// region plus this margin, and each layer has its own maximum "screen
+// height" in km past which it disappears entirely — an ATM only matters at
+// street scale, a hospital or police station should still show from across
+// the city. No bubbles or counts: pins simply appear as the tourist zooms in.
+// Hundreds of custom-view markers made the map stutter on every pan, which
+// is what these limits prevent. Landmarks stay at every zoom (97 pins is
+// fine, and they are what a tourist zooms out to find); risk-zone circles
+// too — they are warnings.
 const PLACE_VIEWPORT_MARGIN = 0.3;
-const MAX_PLACE_PIN_DELTA = 0.6;
+
+// Set by the product owner per layer (2026-09-16). Screen height in km.
+const PLACE_MAX_KM: Record<SafePlaceType, number> = {
+  pharmacy24: 3,
+  atm: 1,
+  hospital: 65,
+  police: 65,
+  toilet: 3,
+};
+const SUBMISSION_MAX_KM: Record<PlaceSubmissionKind, number> = { positive: 25, alert: 25 };
+const PARTNER_MAX_KM: Record<ListingCategory, number> = {
+  car_rental: 25,
+  bar: 10,
+  restaurant: 10,
+  club: 10,
+  currency_exchange: 3,
+  airport_transfer: 25,
+  hotel: 25,
+  tour: 25,
+  other: 10,
+};
+
+// One degree of latitude is ~111 km everywhere, so a region's latitudeDelta
+// converts to the visible height in km without any projection maths.
+const KM_PER_LATITUDE_DEGREE = 111;
+
+function layerFitsZoom(region: Region, maxKm: number): boolean {
+  return region.latitudeDelta * KM_PER_LATITUDE_DEGREE <= maxKm;
+}
 
 function isInsideRegion(lat: number, lng: number, region: Region): boolean {
   const latPad = region.latitudeDelta * (0.5 + PLACE_VIEWPORT_MARGIN);
@@ -494,8 +524,8 @@ export default function MapScreen() {
       partners: partnerVisibility,
     });
   }, [showZones, showLandmarks, placeVisibility, partnerVisibility]);
-  // Only the pins inside (roughly) the visible map are mounted — see
-  // MAX_PLACE_PIN_DELTA.
+  // Only the pins inside (roughly) the visible map are mounted, and each
+  // layer only once the map is zoomed in far enough — see PLACE_MAX_KM.
   const [visibleRegion, setVisibleRegion] = useState<Region>(TBILISI_REGION);
   const [layersOpen, setLayersOpen] = useState(false);
   // "1" badge on the layers button until the panel is opened once — see
@@ -807,28 +837,37 @@ export default function MapScreen() {
     [selection, riskZones],
   );
 
-  const visibleSafePlaces = useMemo(() => {
-    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
-    return safePlaces.filter(
-      (place) => placeVisibility[place.type] && isInsideRegion(place.lat, place.lng, visibleRegion),
-    );
-  }, [safePlaces, placeVisibility, visibleRegion]);
+  const visibleSafePlaces = useMemo(
+    () =>
+      safePlaces.filter(
+        (place) =>
+          placeVisibility[place.type] &&
+          layerFitsZoom(visibleRegion, PLACE_MAX_KM[place.type]) &&
+          isInsideRegion(place.lat, place.lng, visibleRegion),
+      ),
+    [safePlaces, placeVisibility, visibleRegion],
+  );
 
-  const visibleSubmissions = useMemo(() => {
-    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
-    return submittedPlaces.filter((submission) =>
-      isInsideRegion(submission.lat, submission.lng, visibleRegion),
-    );
-  }, [submittedPlaces, visibleRegion]);
+  const visibleSubmissions = useMemo(
+    () =>
+      submittedPlaces.filter(
+        (submission) =>
+          layerFitsZoom(visibleRegion, SUBMISSION_MAX_KM[submission.kind]) &&
+          isInsideRegion(submission.lat, submission.lng, visibleRegion),
+      ),
+    [submittedPlaces, visibleRegion],
+  );
 
-  const visiblePartnerListings = useMemo(() => {
-    if (visibleRegion.latitudeDelta > MAX_PLACE_PIN_DELTA) return [];
-    return partnerListings.filter(
-      (listing) =>
-        partnerVisibility[listing.category] &&
-        isInsideRegion(listing.latitude!, listing.longitude!, visibleRegion),
-    );
-  }, [partnerListings, partnerVisibility, visibleRegion]);
+  const visiblePartnerListings = useMemo(
+    () =>
+      partnerListings.filter(
+        (listing) =>
+          partnerVisibility[listing.category] &&
+          layerFitsZoom(visibleRegion, PARTNER_MAX_KM[listing.category]) &&
+          isInsideRegion(listing.latitude!, listing.longitude!, visibleRegion),
+      ),
+    [partnerListings, partnerVisibility, visibleRegion],
+  );
 
   // Safe places whose pin would land on top of a landmark pin. Computed from
   // the data rather than hardcoded ids, so any future entry that collides is
