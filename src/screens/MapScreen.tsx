@@ -227,9 +227,9 @@ const TBILISI_REGION = {
 // too — they are warnings.
 const PLACE_VIEWPORT_MARGIN = 0.3;
 
-// Set by the product owner per layer (2026-09-16). Screen height in km.
+// Set by the product owner per layer (2026-09-16, adjusted 2026-09-19). Screen height in km.
 const PLACE_MAX_KM: Record<SafePlaceType, number> = {
-  pharmacy24: 3,
+  pharmacy24: 25,
   atm: 1,
   hospital: 65,
   police: 65,
@@ -238,10 +238,10 @@ const PLACE_MAX_KM: Record<SafePlaceType, number> = {
 const SUBMISSION_MAX_KM: Record<PlaceSubmissionKind, number> = { positive: 25, alert: 25 };
 const PARTNER_MAX_KM: Record<ListingCategory, number> = {
   car_rental: 25,
-  bar: 10,
-  restaurant: 10,
-  club: 10,
-  currency_exchange: 3,
+  bar: 25,
+  restaurant: 25,
+  club: 25,
+  currency_exchange: 10,
   airport_transfer: 25,
   hotel: 25,
   tour: 25,
