@@ -39,7 +39,6 @@ import type { PlacePhoto } from '../lib/placePhotos';
 import type { PlaceSubmission, PlaceSubmissionCategory, PlaceSubmissionKind } from '../lib/placeSubmissions';
 import { currentTimeOfDay, isEveningOrLater } from '../lib/guardianContext';
 import { isInsideGeorgia } from '../lib/geography';
-import { presentEveningZoneNotification } from '../lib/notifications';
 import { startEveningZoneLiveActivity } from '../lib/liveActivity';
 import {
   shouldSendEveningNudgeToday,
@@ -483,8 +482,10 @@ export default function MapScreen() {
   useEffect(() => {
     if (!isEveningOrLater()) return;
     shouldSendEveningNudgeToday().then((shouldSend) => {
+      // The banner notification itself is scheduled daily for 19:00 (see
+      // AppEntry) so it arrives with the app closed; only the Live Activity
+      // has to start here, since iOS won't start one from the background.
       if (!shouldSend) return;
-      presentEveningZoneNotification(t('map.eveningNotifTitle'), t('map.eveningNotifBody'));
       startEveningZoneLiveActivity(t('map.eveningNotifTitle'), t('map.eveningZonesOn'));
     });
     const timeout = setTimeout(() => setShowEveningToast(false), 6000);

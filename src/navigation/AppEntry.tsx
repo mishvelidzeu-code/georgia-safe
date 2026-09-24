@@ -6,6 +6,7 @@ import { colors } from '../theme/colors';
 import { useAuth } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
 import { checkForAppUpdateAsync } from '../lib/updates';
+import { scheduleEveningZoneNotification } from '../lib/notifications';
 import AnimatedSplash from '../components/AnimatedSplash';
 import AuthFlow from '../screens/onboarding/AuthFlow';
 import RootNavigator from './RootNavigator';
@@ -50,6 +51,20 @@ export default function AppEntry() {
     check();
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       if (state === 'active') check();
+    });
+    return () => subscription.remove();
+  }, [t]);
+
+  // (Re)schedule the daily 19:00 evening-zone notification in the current
+  // language — at launch, on language change, and on every return to the
+  // foreground, which also picks it up if permission was granted later.
+  useEffect(() => {
+    const schedule = () =>
+      void scheduleEveningZoneNotification(t('map.eveningNotifTitle'), t('map.eveningNotifBody'));
+
+    schedule();
+    const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') schedule();
     });
     return () => subscription.remove();
   }, [t]);

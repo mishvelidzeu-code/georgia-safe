@@ -46,7 +46,31 @@ export async function presentLocalNotification(title: string, body: string): Pro
   }
 }
 
-/** Used for the evening safety-zone nudge on the Map. */
-export async function presentEveningZoneNotification(title: string, body: string): Promise<void> {
-  return presentLocalNotification(title, body);
+const EVENING_NOTIFICATION_ID = 'evening-zones';
+const EVENING_HOUR = 19; // matches isEveningOrLater() in guardianContext.ts
+
+/**
+ * Schedules the evening safety-zone nudge as a daily 19:00 notification, so
+ * iOS/Android deliver it even while the app is closed — code in the app only
+ * runs while it is open. Replaces any earlier schedule (same identifier), so
+ * calling it again after a language change swaps in the new text. Never asks
+ * for permission itself and never throws.
+ */
+export async function scheduleEveningZoneNotification(title: string, body: string): Promise<void> {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return;
+    await Notifications.cancelScheduledNotificationAsync(EVENING_NOTIFICATION_ID).catch(() => {});
+    await Notifications.scheduleNotificationAsync({
+      identifier: EVENING_NOTIFICATION_ID,
+      content: { title, body, sound: true },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: EVENING_HOUR,
+        minute: 0,
+      },
+    });
+  } catch {
+    // Notifications unavailable — non-critical.
+  }
 }
