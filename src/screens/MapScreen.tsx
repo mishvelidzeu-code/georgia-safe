@@ -174,18 +174,19 @@ const SUBMISSION_KIND_COLORS: Record<PlaceSubmissionKind, string> = {
 
 const PARTNER_CATEGORY_ICONS: Record<ListingCategory, keyof typeof Ionicons.glyphMap> = {
   car_rental: 'car-sport', bar: 'beer', restaurant: 'restaurant', club: 'musical-notes',
-  currency_exchange: 'cash', airport_transfer: 'airplane', hotel: 'bed', tour: 'trail-sign',
+  currency_exchange: 'cash', airport_transfer: 'airplane', private_taxi: 'car', bike_rental: 'bicycle', hotel: 'bed', tour: 'trail-sign',
   other: 'ellipsis-horizontal-circle',
 };
 const PARTNER_CATEGORY_COLORS: Record<ListingCategory, string> = {
   car_rental: '#0ea5e9', bar: '#d946ef', restaurant: '#f97316', club: '#ec4899',
-  currency_exchange: '#22c55e', airport_transfer: '#6366f1', hotel: '#a855f7', tour: '#eab308',
+  currency_exchange: '#22c55e', airport_transfer: '#6366f1', private_taxi: '#84cc16', bike_rental: '#06b6d4', hotel: '#a855f7', tour: '#eab308',
   other: '#64748b',
 };
 
-// Partner categories the layers panel lets the tourist toggle. Tours and
-// airport transfers are deliberately left out (always shown) — they are
-// rare pins and not something you switch off while walking around.
+// Partner categories the layers panel lets the tourist toggle. Tours,
+// airport transfers, private taxis and bike rentals are deliberately left out
+// (always shown) — they are rare pins and not something you switch off while walking
+// around.
 const PARTNER_LAYER_CATEGORIES: ListingCategory[] = [
   'car_rental', 'bar', 'restaurant', 'club', 'currency_exchange', 'hotel', 'other',
 ];
@@ -242,6 +243,8 @@ const PARTNER_MAX_KM: Record<ListingCategory, number> = {
   club: 25,
   currency_exchange: 10,
   airport_transfer: 25,
+  private_taxi: 25,
+  bike_rental: 25,
   hotel: 25,
   tour: 25,
   other: 10,

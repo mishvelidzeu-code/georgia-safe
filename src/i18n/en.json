@@ -127,7 +127,14 @@
     "carRental": "Car Rental",
     "scooterRental": "Scooter Rental",
     "carRentalEmpty": "No rental partners here yet. We're adding verified local companies — check back soon.",
-    "unavailable": "Temporarily unavailable"
+    "unavailable": "Temporarily unavailable",
+    "transfer": "Transfer",
+    "privateTaxi": "Private taxi",
+    "ridesHint": "Look through the cars and message the driver on WhatsApp.",
+    "ridesEmpty": "No drivers here yet. We're adding verified local partners — check back soon.",
+    "bikes": "Bicycles",
+    "bikesHint": "Look through the bikes and message the owner on WhatsApp.",
+    "bikesEmpty": "No bike rentals here yet. We're adding verified local partners — check back soon."
   },
   "emergency": {
     "hotlines": "Hotlines",
@@ -501,6 +508,8 @@
       "club": "Club",
       "currency_exchange": "Currency exchange",
       "airport_transfer": "Airport transfer",
+      "private_taxi": "Private taxi",
+      "bike_rental": "Bike rental",
       "hotel": "Hotel",
       "tour": "Tour",
       "other": "Other"

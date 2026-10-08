@@ -14,17 +14,18 @@
       "available": true
     },
     {
-      "id": "jet",
-      "name_en": "JET",
-      "name_ka": "JET",
-      "name_ru": "JET",
-      "cities_en": "Tbilisi, Batumi",
-      "cities_ka": "თბილისი, ბათუმი",
-      "cities_ru": "Тбилиси, Батуми",
-      "note_en": "Scooter sharing in Tbilisi and Batumi. Registration takes a couple of minutes with just a phone number. A scooter can be booked in advance and waits ten minutes for free.",
-      "note_ka": "სკუტერების გაზიარება თბილისსა და ბათუმში. რეგისტრაცია მხოლოდ ტელეფონის ნომრით ორ წუთში სრულდება. სკუტერის წინასწარ დაჯავშნა შეიძლება და ის ათ წუთს უფასოდ გელოდება.",
-      "note_ru": "Шеринг самокатов в Тбилиси и Батуми. Регистрация по номеру телефона занимает пару минут. Самокат можно забронировать заранее — он ждёт десять минут бесплатно.",
-      "available": false
+      "id": "bike",
+      "name_en": "Bicycle",
+      "name_ka": "ველოსიპედი",
+      "name_ru": "Велосипед",
+      "cities_en": "",
+      "cities_ka": "",
+      "cities_ru": "",
+      "note_en": "Bike rentals from approved local partners, contacted on WhatsApp.",
+      "note_ka": "ველოსიპედის გაქირავება დამტკიცებული ადგილობრივი პარტნიორებისგან, კონტაქტი WhatsApp-ით.",
+      "note_ru": "Прокат велосипедов от проверенных местных партнёров, связь через WhatsApp.",
+      "available": true,
+      "listings": "bike_rental"
     },
     {
       "id": "yandex_go",

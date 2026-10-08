@@ -30,7 +30,7 @@ export type Partner = {
 
 export const LISTING_CATEGORIES = [
   'car_rental', 'bar', 'restaurant', 'club', 'currency_exchange',
-  'airport_transfer', 'hotel', 'tour', 'other',
+  'airport_transfer', 'private_taxi', 'bike_rental', 'hotel', 'tour', 'other',
 ] as const;
 export type ListingCategory = (typeof LISTING_CATEGORIES)[number];
 export type ListingStatus = 'pending' | 'published' | 'hidden' | 'rejected';
@@ -123,6 +123,20 @@ export async function fetchRentalCars(city?: string): Promise<RentalCar[]> {
     phone: String(row.phone ?? ''),
     whatsapp: String(row.whatsapp ?? row.phone ?? ''),
   }));
+}
+
+/** Services Getting Around lists as vehicles to browse and message on WhatsApp. */
+export const RIDE_CATEGORIES = ['airport_transfer', 'private_taxi', 'bike_rental'] as const;
+export type RideCategory = (typeof RIDE_CATEGORIES)[number];
+
+/** Approved transfer, private-taxi or bike-rental listings, optionally narrowed to one city (same matching as fetchRentalCars). */
+export async function fetchRideListings(category: RideCategory, city?: string): Promise<PartnerListing[]> {
+  if (!supabase) throw new Error('Supabase not configured');
+  const { data, error } = await supabase.from('partner_listings_public').select('*').eq('category', category);
+  if (error) throw error;
+
+  const wanted = city?.trim();
+  return (data ?? []).filter((row) => !wanted || isSameCity(String(row.city), wanted)).map(mapListing);
 }
 
 // ---------------------------------------------------------------------------

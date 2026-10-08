@@ -9,12 +9,14 @@ import { localizedField } from '../lib/localizeData';
 import { BODY_TYPES, fetchRentalCars } from '../lib/rentals';
 import CitySelect from '../components/CitySelect';
 import { getSelectedRentalCity, setSelectedRentalCity } from '../lib/storage';
-import type { BodyType, RentalCar } from '../lib/rentals';
+import type { BodyType, RentalCar, RideCategory } from '../lib/rentals';
 import RentalCarCard from '../components/RentalCarCard';
+import RideServicesModal, { RIDE_TEXT_KEYS } from '../components/RideServicesModal';
 
-// App-based scooter sharing (Scroll, JET, Yandex Go) — opened, not phoned.
-// Car rentals are no longer bundled data: they come from approved partners
-// (see src/lib/rentals.ts).
+// App-based scooter sharing (Scroll, Yandex Go) — opened, not phoned — plus
+// the bicycle card, which instead lists approved bike-rental partners
+// (`listings`). Car rentals are no longer bundled data: they come from
+// approved partners too (see src/lib/rentals.ts).
 type ScooterApp = {
   id: string;
   name_en: string;
@@ -29,6 +31,9 @@ type ScooterApp = {
   // False keeps the card visible but dimmed and unopenable — a service that
   // has paused is more useful shown as paused than silently removed.
   available: boolean;
+  // Set on the bicycle card: tapping it lists this partner category instead
+  // of opening an app.
+  listings?: RideCategory;
 };
 
 const scooterApps = rentalsData.scooter_apps as ScooterApp[];
@@ -65,7 +70,6 @@ const APP_URLS: Record<string, { scheme?: string; web: string }> = {
   bolt: { scheme: 'bolt://', web: 'https://bolt.eu/en/' },
   yandex_go: { scheme: 'yandextaxi://', web: 'https://go.yandex.com/' },
   scroll: { web: 'https://scroll.eco/' },
-  jet: { web: 'https://jetsharing.ge/' },
 };
 
 async function openTaxiApp(appId: string) {
@@ -90,6 +94,13 @@ async function openTaxiApp(appId: string) {
 // The two ride-hailing apps a tourist actually needs, shown as quick cards.
 const QUICK_APP_IDS = ['bolt', 'yandex_go'];
 
+// Transfer and private taxi: partner cars the tourist browses and books by
+// WhatsApp, opened from two cards under the app rows.
+const RIDE_CARDS: { category: RideCategory; icon: keyof typeof MaterialCommunityIcons.glyphMap }[] = [
+  { category: 'airport_transfer', icon: 'car-side' },
+  { category: 'private_taxi', icon: 'taxi' },
+];
+
 const BODY_TYPE_ICONS: Record<BodyType, keyof typeof MaterialCommunityIcons.glyphMap> = {
   coupe: 'car-sports',
   sedan: 'car',
@@ -103,6 +114,7 @@ export default function GettingAroundScreen() {
   const [city, setCity] = useState<string | null>(null);
   const [bodyType, setBodyType] = useState<BodyType | null>(null);
   const [query, setQuery] = useState('');
+  const [rideCategory, setRideCategory] = useState<RideCategory | null>(null);
 
   // Body type and text search are applied on top of the city filter, locally:
   // the list is already small once a city is chosen.
@@ -196,11 +208,15 @@ export default function GettingAroundScreen() {
             key={app.id}
             style={[styles.quickCard, styles.miniCard, !app.available && styles.miniCardOff]}
           >
-            <Ionicons
-              name="bicycle"
-              size={18}
-              color={app.available ? colors.text : colors.textMuted}
-            />
+            {app.listings ? (
+              <Ionicons name="bicycle" size={18} color={app.available ? colors.text : colors.textMuted} />
+            ) : (
+              <MaterialCommunityIcons
+                name="scooter-electric"
+                size={18}
+                color={app.available ? colors.text : colors.textMuted}
+              />
+            )}
             <Text
               style={[styles.miniCardTitle, !app.available && styles.miniCardTitleOff]}
               numberOfLines={1}
@@ -210,7 +226,11 @@ export default function GettingAroundScreen() {
             {app.available ? (
               <Pressable
                 style={[styles.openButton, styles.miniOpenButton]}
-                onPress={() => openTaxiApp(app.id)}
+                onPress={() => {
+                  const { listings } = app;
+                  if (listings) setRideCategory(listings);
+                  else void openTaxiApp(app.id);
+                }}
               >
                 <Text style={styles.miniOpenText}>{t('gettingAround.open')}</Text>
               </Pressable>
@@ -218,6 +238,24 @@ export default function GettingAroundScreen() {
               <Text style={styles.miniUnavailable}>{t('gettingAround.unavailable')}</Text>
             )}
           </View>
+        ))}
+      </View>
+
+      <View style={styles.quickRow}>
+        {RIDE_CARDS.map(({ category, icon }) => (
+          <Pressable
+            key={category}
+            style={({ pressed }) => [styles.quickCard, pressed && styles.quickCardPressed]}
+            onPress={() => setRideCategory(category)}
+            accessibilityRole="button"
+          >
+            <MaterialCommunityIcons name={icon} size={26} color={colors.text} />
+            <Text style={styles.quickCardTitle}>{t(RIDE_TEXT_KEYS[category].title)}</Text>
+            <View style={[styles.openButton, styles.quickOpenButton, styles.whatsappButton]}>
+              <Ionicons name="logo-whatsapp" size={16} color={colors.white} />
+              <Text style={styles.whatsappButtonText}>WhatsApp</Text>
+            </View>
+          </Pressable>
         ))}
       </View>
 
@@ -282,6 +320,13 @@ export default function GettingAroundScreen() {
           </View>
         ))}
       </View>
+
+      <RideServicesModal
+        category={rideCategory}
+        city={city}
+        onChangeCity={changeCity}
+        onClose={() => setRideCategory(null)}
+      />
     </ScrollView>
   );
 }
@@ -415,6 +460,17 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
+  },
+  whatsappButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#25D366',
+  },
+  whatsappButtonText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
   openButtonText: {
     color: colors.background,

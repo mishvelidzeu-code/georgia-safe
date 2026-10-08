@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   Dimensions,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,32 +13,12 @@ import { colors } from '../theme/colors';
 import { useLanguage } from '../i18n/LanguageContext';
 import type { RentalCar } from '../lib/rentals';
 import { tapFeedback } from '../lib/haptics';
+import { callPhone, messageOnWhatsApp } from '../lib/contact';
 import PhotoViewerModal from './PhotoViewerModal';
 
 // Photos fill the card's width so swiping snaps one photo at a time. The card
 // sits inside the screen's 16pt horizontal padding.
 const PHOTO_WIDTH = Dimensions.get('window').width - 32 - 24;
-
-function call(phone: string) {
-  Linking.openURL(`tel:${phone.replace(/\s+/g, '')}`).catch(() => {});
-}
-
-/**
- * Opens WhatsApp on the partner's number with the enquiry already typed, so
- * the tourist only has to press send. wa.me opens the app when installed and
- * WhatsApp Web otherwise; SMS with the same text is the fallback if neither
- * can open. Deliberately not an in-app chat: a rental enquiry belongs in a
- * thread the tourist keeps after the trip.
- */
-async function messageOnWhatsApp(phone: string, text: string) {
-  const digits = phone.replace(/[^\d]/g, '');
-  const url = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
-  try {
-    await Linking.openURL(url);
-  } catch {
-    Linking.openURL(`sms:${phone.replace(/\s+/g, '')}&body=${encodeURIComponent(text)}`).catch(() => {});
-  }
-}
 
 /**
  * One car, one card. Collapsed it shows the first photo and the headline
@@ -145,7 +124,7 @@ export default function RentalCarCard({ car }: { car: RentalCar }) {
               style={[styles.actionButton, styles.callButton]}
               onPress={() => {
                 tapFeedback();
-                call(car.phone);
+                callPhone(car.phone);
               }}
             >
               <Ionicons name="call" size={16} color={colors.white} />
